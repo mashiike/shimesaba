@@ -227,6 +227,12 @@ Assuming that you have obtained the metrics `alb_2xx` and `alb_5xx`, you can wri
 `rate()` is a function prepared to safely execute division while avoiding division by zero.
 The meaning of this comparison formula is `If the HTTP request rate is 95% or higher, the service is healthy`.
 
+### Environment variable `SSMWRAP_PATHS`
+
+It incorporates [github.com/handlename/ssmwrap](https://github.com/handlename/ssmwrap) for parameter management.  
+If you specify the path of the Parameter Store of AWS Systems Manager separated by commas, it will be output to the environment variable.  
+Useful when used as a Lambda function.  
+
 ## LICENSE
 
 MIT

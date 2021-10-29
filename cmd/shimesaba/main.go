@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/handlename/ssmwrap"
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
 )
@@ -39,6 +40,18 @@ var (
 )
 
 func main() {
+	paths := strings.Split(os.Getenv("SSMWRAP_PATHS"), ",")
+	if len(paths) == 0 {
+		err := ssmwrap.Export(ssmwrap.ExportOptions{
+			Paths:   paths,
+			Retries: 3,
+		})
+		if err != nil {
+			logger.Setup(os.Stderr, "info")
+			log.Printf("[error] ssmwrap.Export failed: %w\n", err)
+			os.Exit(1)
+		}
+	}
 
 	flag.Var(&configFiles, "config", "config file path, can set multiple")
 	flag.StringVar(&mackerelAPIKey, "mackerel-apikey", "", "for access mackerel API")
