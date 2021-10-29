@@ -70,6 +70,24 @@ func (c *MetricConfig) MergeInto(o *MetricConfig) {
 	}
 }
 
+// Restrict restricts a configuration.
+func (c *MetricConfig) Restrict() error {
+	if c.ID == "" {
+		return errors.New("id is required")
+	}
+	if c.ServiceName == "" {
+		return errors.New("service_name is required")
+	}
+	if c.Type == 0 {
+		return errors.New("type is required")
+	}
+	c.AggregationMethod = coalesceString(c.AggregationMethod, "max")
+	if c.AggregationInterval <= 0 {
+		c.AggregationInterval = 1
+	}
+	return nil
+}
+
 type MetricConfigs map[string]*MetricConfig
 
 // Restrict restricts a metric configuration.
@@ -77,6 +95,9 @@ func (c MetricConfigs) Restrict() error {
 	for id, cfg := range c {
 		if id != cfg.ID {
 			return fmt.Errorf("metrics id=%s not match config id", id)
+		}
+		if err := cfg.Restrict(); err != nil {
+			return fmt.Errorf("metrics[%s] %w", id, err)
 		}
 	}
 	return nil
