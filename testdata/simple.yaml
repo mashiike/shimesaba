@@ -18,8 +18,8 @@ metrics:
 definitions:
   - id: latency
     service_name:  shimesaba
-    time_frame: 10
-    calculate_interval: 5
+    time_frame: 5
+    calculate_interval: 1
     error_budget_size: 0.1
     objectives:
       - expr: alb_p90_response_time <= 1.0

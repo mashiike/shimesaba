@@ -55,10 +55,50 @@ func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 	return app, nil
 }
 
-func (app *App) Run(ctx context.Context, dryRun bool) error {
+type runConfig struct {
+	dryRun   bool
+	backfill int
+}
+
+type RunOption interface {
+	apply(*runConfig)
+}
+
+type runOptionFunc func(*runConfig)
+
+func (f runOptionFunc) apply(rc *runConfig) {
+	f(rc)
+}
+
+func DryRunOption(dryRun bool) RunOption {
+	return runOptionFunc(func(rc *runConfig) {
+		rc.dryRun = dryRun
+	})
+}
+
+func BackfillOption(count int) RunOption {
+	return runOptionFunc(func(rc *runConfig) {
+		rc.backfill = count
+	})
+}
+
+func (app *App) Run(ctx context.Context, opts ...RunOption) error {
+	rc := &runConfig{
+		backfill: 3,
+		dryRun:   false,
+	}
+	for _, opt := range opts {
+		opt.apply(rc)
+	}
 	log.Println("[debug]", app.metricConfigs)
 	now := flextime.Now()
-	startAt := timeutils.TruncTime(timeutils.TruncTime(now, app.maxCalculate).Add(-4*app.maxCalculate-app.maxTimeFrame), app.maxCalculate)
+	startAt := timeutils.TruncTime(
+		timeutils.TruncTime(
+			now,
+			app.maxCalculate,
+		).Add(-(time.Duration(rc.backfill))*app.maxCalculate-app.maxTimeFrame),
+		app.maxCalculate,
+	)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
 	metrics, err := app.repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
 	if err != nil {
@@ -71,7 +111,7 @@ func (app *App) Run(ctx context.Context, dryRun bool) error {
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}
-		if dryRun {
+		if rc.dryRun {
 			log.Printf("[info] dryrun! output stdout reports[%s]\n", d.ID())
 			bs, err := json.MarshalIndent(reports, "", "  ")
 			if err != nil {

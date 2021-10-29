@@ -30,20 +30,21 @@ func (i *stringSlice) Set(v string) error {
 }
 
 var (
-	Version = "current"
+	Version        = "current"
+	mackerelAPIKey string
+	debug          bool
+	dryRun         bool
+	backfill       uint
+	configFiles    stringSlice
 )
 
 func main() {
-	var (
-		mackerelAPIKey string
-		debug          bool
-		dryRun         bool
-		configFiles    stringSlice
-	)
+
 	flag.Var(&configFiles, "config", "config file path, can set multiple")
 	flag.StringVar(&mackerelAPIKey, "mackerel-apikey", "", "for access mackerel API")
 	flag.BoolVar(&debug, "debug", false, "output debug log")
 	flag.BoolVar(&dryRun, "dry-run", false, "report output stdout and not put mackerel")
+	flag.UintVar(&backfill, "backfill", 3, "generate report before n point")
 	flag.VisitAll(envToFlag)
 	flag.Parse()
 
@@ -52,6 +53,10 @@ func main() {
 		minLevel = "debug"
 	}
 	logger.Setup(os.Stderr, minLevel)
+	if backfill == 0 {
+		log.Println("[error] backfill count must positive avlue")
+		os.Exit(1)
+	}
 	cfg := shimesaba.NewDefaultConfig()
 	if err := cfg.Load(configFiles...); err != nil {
 		log.Println("[error]", err)
@@ -74,7 +79,7 @@ func main() {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
 	defer cancel()
-	if err := app.Run(ctx, dryRun); err != nil {
+	if err := app.Run(ctx, shimesaba.DryRunOption(dryRun), shimesaba.BackfillOption(int(backfill))); err != nil {
 		log.Println("[error]", err)
 		os.Exit(1)
 	}
@@ -82,7 +87,7 @@ func main() {
 
 func lambdaHandler(app *shimesaba.App) func(context.Context) error {
 	return func(ctx context.Context) error {
-		return app.Run(ctx, false)
+		return app.Run(ctx, shimesaba.DryRunOption(dryRun), shimesaba.BackfillOption(int(backfill)))
 	}
 }
 
