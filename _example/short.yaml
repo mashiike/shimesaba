@@ -1,0 +1,42 @@
+required_version: ">=0.0.0"
+
+x-alb-metric-template: &template
+  type: host
+  service_name: prod
+  roles:
+    - ALB
+  host_name: {{ must_env `TARGET_ALB_NAME`}}
+  aggregation_interval: 1
+  aggregation_method: max
+
+metrics:
+  - id: alb_p90_response_time
+    name: custom.alb.response.time_p90
+    <<: *template
+
+  - id: alb_p99_response_time
+    name: custom.alb.response.time_p99
+    <<: *template
+
+  - id: alb_5xx_count
+    name: custom.alb.httpcode_count.target_5xx
+    <<: *template
+
+  - id: alb_2xx_count
+    name: custom.alb.httpcode_count.target_2xx
+    <<: *template
+
+definitions:
+  - id: availability
+    time_frame: 1440
+    calculate_interval: 60
+    error_budget_size: 0.001
+    objectives:
+      - expr: rate(alb_2xx_count, alb_5xx_count + alb_2xx_count) >= 0.97
+  - id: latency
+    time_frame: 1440
+    error_budget_size: 0.001
+    calculate_interval: 60
+    objectives:
+      - expr: alb_p90_response_time <= 0.7
+      - expr: alb_p99_response_time <= 1.5
