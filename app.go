@@ -9,7 +9,6 @@ import (
 
 	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
-	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 type App struct {
@@ -93,13 +92,9 @@ func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 	}
 	log.Println("[debug]", app.metricConfigs)
 	now := flextime.Now()
-	startAt := timeutils.TruncTime(
-		timeutils.TruncTime(
-			now,
-			app.maxCalculate,
-		).Add(-(time.Duration(rc.backfill))*app.maxCalculate-app.maxTimeFrame),
-		app.maxCalculate,
-	)
+	startAt := now.Truncate(app.maxCalculate).
+		Add(-(time.Duration(rc.backfill))*app.maxCalculate - app.maxTimeFrame).
+		Truncate(app.maxCalculate)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
 	metrics, err := app.repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
 	if err != nil {

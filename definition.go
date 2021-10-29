@@ -63,8 +63,8 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 			}
 		}
 	}
-	outerStartAt := timeutils.TruncTime(metrics.StartAt().Add(d.timeFrame+d.calculate), d.calculate)
-	outerEndAt := timeutils.TruncTime(metrics.EndAt(), d.calculate)
+	outerStartAt := metrics.StartAt().Add(d.timeFrame + d.calculate).Truncate(d.calculate)
+	outerEndAt := metrics.EndAt().Truncate(d.calculate)
 	outerIter := timeutils.NewIterator(outerStartAt, outerEndAt, d.calculate)
 	outerIter.SetEnableOverWindow(true)
 	log.Printf("[info] definition[%s] calculate range %s ~ %s\n", d.id, outerStartAt, outerEndAt)

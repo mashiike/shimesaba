@@ -71,7 +71,8 @@ func (m *Metric) ID() string {
 }
 
 func (m *Metric) AppendValue(t time.Time, v interface{}) error {
-	t = timeutils.TruncTime(t, m.aggregationInterval)
+	t = t.Truncate(m.aggregationInterval)
+
 	var value float64
 	switch v := v.(type) {
 	case float64:
@@ -107,7 +108,7 @@ func (m *Metric) AppendValue(t time.Time, v interface{}) error {
 }
 
 func (m *Metric) GetValue(t time.Time) (float64, bool) {
-	t = timeutils.TruncTime(t, m.aggregationInterval)
+	t = t.Truncate(m.aggregationInterval)
 	values, ok := m.values[t]
 	if !ok {
 		return math.NaN(), false
