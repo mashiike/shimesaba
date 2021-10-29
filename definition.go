@@ -87,7 +87,6 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 		for innerIter.HasNext() {
 			t, _ := innerIter.Next()
 			if isUp, ok := upFlag[t]; ok && !isUp {
-				log.Printf("[debug] definition[%s]<%s> is failure", d.id, t)
 				faiureTime += aggInterval
 				if report.DataPoint.Sub(t) < d.calculate {
 					deltaFaiureTime += aggInterval
@@ -124,7 +123,7 @@ type Report struct {
 }
 
 func (r *Report) String() string {
-	return fmt.Sprintf("definition[%s]<%s~%s> up_time=%s faiure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
+	return fmt.Sprintf("definition[%s][%s]<%s~%s> up_time=%s faiure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.DataPoint, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
 }
 
 func (r *Report) ErrorBudgetUsageRate() float64 {

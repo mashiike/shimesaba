@@ -83,6 +83,7 @@ func BackfillOption(count int) RunOption {
 }
 
 func (app *App) Run(ctx context.Context, opts ...RunOption) error {
+	log.Printf("[info] start run")
 	rc := &runConfig{
 		backfill: 3,
 		dryRun:   false,
@@ -125,5 +126,6 @@ func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 			}
 		}
 	}
+	log.Printf("[info] run successed")
 	return nil
 }

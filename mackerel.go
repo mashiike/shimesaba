@@ -150,12 +150,16 @@ func (repo *Repository) postServiceMetricValues(ctx context.Context, service str
 		if size < end {
 			end = size
 		}
-		log.Printf("[info] PostServiceMetricValues %s values[%d:%d]", service, start, end)
+		log.Printf("[info] PostServiceMetricValues %s values[%d:%d]\n", service, start, end)
 		err := policy.Do(ctx, func() error {
-			return repo.client.PostServiceMetricValues(service, values[start:end])
+			err := repo.client.PostServiceMetricValues(service, values[start:end])
+			if err != nil {
+				log.Printf("[warn] PostServiceMetricValues retry because: %s\n", err)
+			}
+			return err
 		})
 		if err != nil {
-			log.Printf("[warn] failed to PostServiceMetricValues service:%s %s", service, err)
+			log.Printf("[warn] failed to PostServiceMetricValues service:%s %s\n", service, err)
 		}
 	}
 	return nil
