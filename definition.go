@@ -81,7 +81,7 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 			DataPoint:        curAt,
 			TimeFrameStartAt: curAt.Add(-d.timeFrame),
 			TimeFrameEndAt:   curAt.Add(-time.Nanosecond),
-			ErrorBudgetSize:  time.Duration(d.errorBudgetSize * float64(d.timeFrame)),
+			ErrorBudgetSize:  time.Duration(d.errorBudgetSize * float64(d.timeFrame)).Truncate(time.Minute),
 		}
 		innerIter := timeutils.NewIterator(report.TimeFrameStartAt, report.TimeFrameEndAt, aggInterval)
 		for innerIter.HasNext() {
@@ -101,8 +101,8 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 		}
 		report.UpTime = upTime
 		report.FailureTime = faiureTime
-		report.ErrorBudget = report.ErrorBudgetSize - faiureTime
-		report.ErrorBudgetConsumption = deltaFaiureTime
+		report.ErrorBudget = (report.ErrorBudgetSize - faiureTime).Truncate(time.Minute)
+		report.ErrorBudgetConsumption = deltaFaiureTime.Truncate(time.Minute)
 		log.Printf("[debug] %s\n", report)
 		reports = append(reports, report)
 	}
