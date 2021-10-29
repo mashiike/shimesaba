@@ -48,7 +48,7 @@ func main() {
 		})
 		if err != nil {
 			logger.Setup(os.Stderr, "info")
-			log.Printf("[error] ssmwrap.Export failed: %w\n", err)
+			log.Printf("[error] ssmwrap.Export failed: %s\n", err)
 			os.Exit(1)
 		}
 	}
