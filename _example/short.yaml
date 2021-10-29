@@ -1,6 +1,6 @@
 required_version: ">=0.0.0"
 
-x-alb-metric-template: &template
+x-metric-template: &metric-template
   type: host
   service_name: prod
   roles:
@@ -12,31 +12,34 @@ x-alb-metric-template: &template
 metrics:
   - id: alb_p90_response_time
     name: custom.alb.response.time_p90
-    <<: *template
+    <<: *metric-template
 
   - id: alb_p99_response_time
     name: custom.alb.response.time_p99
-    <<: *template
+    <<: *metric-template
 
   - id: alb_5xx_count
     name: custom.alb.httpcode_count.target_5xx
-    <<: *template
+    <<: *metric-template
 
   - id: alb_2xx_count
     name: custom.alb.httpcode_count.target_2xx
-    <<: *template
+    <<: *metric-template
+
+x-definition-template: &definition-template
+  service_name:  {{ must_env `POST_METRIC_SERVICE`}}
+  time_frame: 1440
+  error_budget_size: 0.001
+  calculate_interval: 60
 
 definitions:
   - id: availability
-    time_frame: 1440
-    calculate_interval: 60
-    error_budget_size: 0.001
     objectives:
       - expr: rate(alb_2xx_count, alb_5xx_count + alb_2xx_count) >= 0.97
+    <<: *definition-template
+
   - id: latency
-    time_frame: 1440
-    error_budget_size: 0.001
-    calculate_interval: 60
     objectives:
-      - expr: alb_p90_response_time <= 0.7
-      - expr: alb_p99_response_time <= 1.5
+      - expr: alb_p90_response_time <= 0.4
+      - expr: alb_p99_response_time <= 0.85
+    <<: *definition-template

@@ -1,0 +1,27 @@
+required_version: ">=0.0.0"
+
+metrics:
+  - id: alb_p90_response_time
+    name: custom.alb.response.time_p90
+    type: host
+    service_name: shimesaba
+    host_name: dummy-alb
+    aggregation_interval: 1
+    aggregation_method: max
+  - id: component_response_time
+    name: component.dummy.response_time
+    type: service
+    service_name: shimesaba
+    aggregation_interval: 1
+    aggregation_method: avg
+
+definitions:
+  - id: latency
+    service_name:  shimesaba
+    time_frame: 10
+    calculate_interval: 5
+    error_budget_size: 0.1
+    objectives:
+      - expr: alb_p90_response_time <= 1.0
+      - expr: component_response_time <= 1.0
+

@@ -12,6 +12,7 @@ import (
 
 func TestConfigLoadNoError(t *testing.T) {
 	os.Setenv("TARGET_ALB_NAME", "dummy-alb")
+	os.Setenv("POST_METRIC_SERVICE", "dummy-service")
 	cases := []struct {
 		casename string
 		paths    []string
@@ -19,6 +20,10 @@ func TestConfigLoadNoError(t *testing.T) {
 		{
 			casename: "default_config",
 			paths:    []string{"_example/default.yaml"},
+		},
+		{
+			casename: "simple_config",
+			paths:    []string{"testdata/simple.yaml"},
 		},
 	}
 

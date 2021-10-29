@@ -120,6 +120,7 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 type DefinitionConfig struct {
 	ID                string             `json:"id" yaml:"id"`
 	TimeFrame         int64              `yaml:"time_frame" json:"time_frame"`
+	ServiceName       string             `json:"service_name" yaml:"service_name"`
 	ErrorBudgetSize   float64            `yaml:"error_budget_size" json:"error_budget_size"`
 	CalculateInterval int64              `yaml:"calculate_interval" json:"calculate_interval"`
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
@@ -133,6 +134,7 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	if o.ErrorBudgetSize != 0.0 {
 		c.ErrorBudgetSize = o.ErrorBudgetSize
 	}
+	c.ServiceName = coalesceString(o.ServiceName, c.ServiceName)
 	c.Objectives = append(c.Objectives, o.Objectives...)
 }
 
@@ -140,6 +142,9 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 func (c *DefinitionConfig) Restrict() error {
 	if c.ID == "" {
 		return errors.New("id is required")
+	}
+	if c.ServiceName == "" {
+		return errors.New("service_name is required")
 	}
 	if c.TimeFrame <= 0 {
 		return errors.New("time_frame must over 0")

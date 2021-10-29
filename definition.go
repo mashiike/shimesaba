@@ -12,6 +12,7 @@ import (
 
 type Definition struct {
 	id              string
+	serviceName     string
 	timeFrame       time.Duration
 	calculate       time.Duration
 	errorBudgetSize float64
@@ -30,6 +31,7 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	}
 	return &Definition{
 		id:              cfg.ID,
+		serviceName:     cfg.ServiceName,
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSize,
@@ -75,6 +77,7 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 
 		report := &Report{
 			DefinitionID:     d.id,
+			ServiceName:      d.serviceName,
 			DataPoint:        curAt,
 			TimeFrameStartAt: curAt.Add(-d.timeFrame),
 			TimeFrameEndAt:   curAt.Add(-time.Nanosecond),
@@ -109,11 +112,10 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 
 type Report struct {
 	DefinitionID           string
+	ServiceName            string
 	DataPoint              time.Time
 	TimeFrameStartAt       time.Time
 	TimeFrameEndAt         time.Time
-	DeltaUpTime            time.Duration
-	DeltaFaiureTime        time.Duration
 	UpTime                 time.Duration
 	FailureTime            time.Duration
 	ErrorBudgetSize        time.Duration

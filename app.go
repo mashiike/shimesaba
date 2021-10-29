@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
@@ -23,6 +24,11 @@ type App struct {
 
 func New(apikey string, cfg *Config) (*App, error) {
 	client := mackerel.NewClient(apikey)
+	return NewWithMackerelClient(client, cfg)
+}
+
+func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
+
 	definitions := make([]*Definition, 0, len(cfg.Definitions))
 	var maxTimeFrame, maxCalculate time.Duration
 	for _, dcfg := range cfg.Definitions {
@@ -51,7 +57,7 @@ func New(apikey string, cfg *Config) (*App, error) {
 
 func (app *App) Run(ctx context.Context, dryRun bool) error {
 	log.Println("[debug]", app.metricConfigs)
-	now := time.Now()
+	now := flextime.Now()
 	startAt := timeutils.TruncTime(timeutils.TruncTime(now, app.maxCalculate).Add(-4*app.maxCalculate-app.maxTimeFrame), app.maxCalculate)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
 	metrics, err := app.repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
