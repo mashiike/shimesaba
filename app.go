@@ -121,6 +121,7 @@ func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 			}
 		}
 	}
-	log.Printf("[info] run successed")
+	runTime := flextime.Now().Sub(now)
+	log.Printf("[info] run successed. run time:%s\n", runTime)
 	return nil
 }
