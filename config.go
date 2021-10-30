@@ -12,6 +12,7 @@ import (
 	gc "github.com/kayac/go-config"
 )
 
+//Config for App
 type Config struct {
 	RequiredVersion string `yaml:"required_version" json:"required_version"`
 
@@ -21,6 +22,7 @@ type Config struct {
 	versionConstraints gv.Constraints
 }
 
+//MetricConfig handles metric information obtained from Mackerel
 type MetricConfig struct {
 	ID                  string     `yaml:"id" json:"id"`
 	Type                MetricType `yaml:"type" json:"type"`
@@ -32,6 +34,7 @@ type MetricConfig struct {
 	AggregationMethod   string     `json:"aggregation_method" yaml:"aggregation_method"`
 }
 
+//String output json
 func (c *MetricConfig) String() string {
 	bs, _ := json.Marshal(c)
 	return string(bs)
@@ -45,6 +48,8 @@ func coalesceString(strs ...string) string {
 	}
 	return ""
 }
+
+//MergeInto merges MetricConfigs together
 func (c *MetricConfig) MergeInto(o *MetricConfig) {
 	c.ID = coalesceString(o.ID, c.ID)
 	c.Name = coalesceString(o.Name, c.Name)
@@ -88,6 +93,7 @@ func (c *MetricConfig) Restrict() error {
 	return nil
 }
 
+//MetricConfigs is a collection of MetricConfig
 type MetricConfigs map[string]*MetricConfig
 
 // Restrict restricts a metric configuration.
@@ -103,6 +109,7 @@ func (c MetricConfigs) Restrict() error {
 	return nil
 }
 
+//ToSlice converts the collection to Slice
 func (c MetricConfigs) ToSlice() []*MetricConfig {
 	ret := make([]*MetricConfig, 0, len(c))
 	for _, cfg := range c {
@@ -111,14 +118,17 @@ func (c MetricConfigs) ToSlice() []*MetricConfig {
 	return ret
 }
 
+// MarshalYAML controls Yamlization
 func (c MetricConfigs) MarshalYAML() (interface{}, error) {
 	return c.ToSlice(), nil
 }
 
+// String implements fmt.Stringer
 func (c MetricConfigs) String() string {
 	return fmt.Sprintf("%v", c.ToSlice())
 }
 
+// UnmarshalYAML merges duplicate ID MetricConfig
 func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	tmp := make([]*MetricConfig, 0, len(*c))
 	if err := unmarshal(&tmp); err != nil {
@@ -138,6 +148,7 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// DefinitionConfig is a setting related to SLI/SLO
 type DefinitionConfig struct {
 	ID                string             `json:"id" yaml:"id"`
 	TimeFrame         int64              `yaml:"time_frame" json:"time_frame"`
@@ -147,6 +158,7 @@ type DefinitionConfig struct {
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
 }
 
+// MergeInto merges DefinitionConfig together
 func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.ID = coalesceString(o.ID, c.ID)
 	if o.TimeFrame != 0 {
@@ -181,20 +193,24 @@ func (c *DefinitionConfig) Restrict() error {
 	return nil
 }
 
+// DurationTimeFrame converts TimeFrame as time.Duration
 func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
 	return time.Duration(c.TimeFrame) * time.Minute
 }
 
+// DurationCalculate converts CalculateInterval as time.Duration
 func (c *DefinitionConfig) DurationCalculate() time.Duration {
 	return time.Duration(c.CalculateInterval) * time.Minute
 }
 
+// Objective Config is a SLO setting
 type ObjectiveConfig struct {
 	Expr string `yaml:"expr" json:"expr"`
 
 	metricComparator *MetricComparator
 }
 
+// Restrict restricts a configuration.
 func (c *ObjectiveConfig) Restrict() error {
 	if c.Expr == "" {
 		return errors.New("exer is required")
@@ -207,10 +223,12 @@ func (c *ObjectiveConfig) Restrict() error {
 	return nil
 }
 
+// GetMetricComparator returns a MetricComparator generated from ObjectiveConfig
 func (c *ObjectiveConfig) GetMetricComparator() *MetricComparator {
 	return c.metricComparator
 }
 
+// DefinitionConfigs is a collection of DefinitionConfigs that corrects the uniqueness of IDs.
 type DefinitionConfigs map[string]*DefinitionConfig
 
 // Restrict restricts a definition configuration.
@@ -234,14 +252,17 @@ func (c DefinitionConfigs) ToSlice() []*DefinitionConfig {
 	return ret
 }
 
+// MarshalYAML implements yaml.Marhaller
 func (c DefinitionConfigs) MarshalYAML() (interface{}, error) {
 	return c.ToSlice(), nil
 }
 
+// String implements fmt.Stringer
 func (c DefinitionConfigs) String() string {
 	return fmt.Sprintf("%v", c.ToSlice())
 }
 
+// MarshalYAML implements yaml.Unmarhaller
 func (c *DefinitionConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	tmp := make([]*DefinitionConfig, 0, len(*c))
 	if err := unmarshal(&tmp); err != nil {

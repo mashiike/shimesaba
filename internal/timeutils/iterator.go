@@ -2,6 +2,7 @@ package timeutils
 
 import "time"
 
+// Iterator achieves a loop for a specified period of time
 type Iterator struct {
 	startAt          time.Time
 	endAt            time.Time
@@ -10,6 +11,7 @@ type Iterator struct {
 	enableOverWindow bool
 }
 
+//NewIterator create Iterator
 func NewIterator(startAt, endAt time.Time, tick time.Duration) *Iterator {
 	return &Iterator{
 		startAt:          startAt,
@@ -31,6 +33,7 @@ func (iter *Iterator) nextTick() time.Duration {
 	return iter.tick
 }
 
+// HasNext is a loop continuation condition
 func (iter *Iterator) HasNext() bool {
 	remaining := iter.remaining()
 	if remaining > 0 {
@@ -39,6 +42,7 @@ func (iter *Iterator) HasNext() bool {
 	return iter.enableOverWindow && remaining == 0
 }
 
+// Next returns the current rolling window and recommends Iterator to the next window
 func (iter *Iterator) Next() (time.Time, time.Time) {
 	nextTick := iter.nextTick()
 	curStartAt := iter.curAt
@@ -47,6 +51,7 @@ func (iter *Iterator) Next() (time.Time, time.Time) {
 	return curStartAt, curEndAt.Add(-time.Nanosecond)
 }
 
+//SetEnableOverWindow affects the Iterator's end condition and specifies whether to allow the end time of the rolling window to exceed the end time of the specified period.
 func (iter *Iterator) SetEnableOverWindow(flag bool) {
 	iter.enableOverWindow = flag
 }

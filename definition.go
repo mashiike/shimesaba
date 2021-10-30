@@ -10,6 +10,7 @@ import (
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
+//Definition is SLI/SLO Definition
 type Definition struct {
 	id              string
 	serviceName     string
@@ -20,6 +21,7 @@ type Definition struct {
 	objectives []*MetricComparator
 }
 
+//NewDefinition creates Definition from DefinitionConfig
 func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	objectives := make([]*MetricComparator, 0, len(cfg.Objectives))
 	for _, ocfg := range cfg.Objectives {
@@ -39,10 +41,12 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	}, nil
 }
 
+// ID returns DefinitionConfig.id
 func (d *Definition) ID() string {
 	return d.id
 }
 
+// CreateRepoorts returns Report with Metrics
 func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Report, error) {
 	upFlag := make(map[time.Time]bool)
 	for _, o := range d.objectives {
@@ -109,6 +113,7 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 	return reports, nil
 }
 
+// Report has SLI/ SLO/ErrorBudget numbers in one rolling window
 type Report struct {
 	DefinitionID           string
 	ServiceName            string
@@ -122,10 +127,12 @@ type Report struct {
 	ErrorBudgetConsumption time.Duration
 }
 
+// String implements fmt.Stringer
 func (r *Report) String() string {
 	return fmt.Sprintf("definition[%s][%s]<%s~%s> up_time=%s faiure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.DataPoint, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
 }
 
+// ErrorBudgetUsageRate returns (1.0 - ErrorBudget/ErrorBudgetSize)
 func (r *Report) ErrorBudgetUsageRate() float64 {
 	if r.ErrorBudget >= 0 {
 		return 1.0 - float64(r.ErrorBudget)/float64(r.ErrorBudgetSize)
@@ -133,10 +140,12 @@ func (r *Report) ErrorBudgetUsageRate() float64 {
 	return -float64(r.ErrorBudget-r.ErrorBudgetSize) / float64(r.ErrorBudgetSize)
 }
 
+// ErrorBudgetConsumptionRate returns ErrorBudgetConsumption/ErrorBudgetSize
 func (r *Report) ErrorBudgetConsumptionRate() float64 {
 	return float64(r.ErrorBudgetConsumption) / float64(r.ErrorBudgetSize)
 }
 
+// MarshalJSON implements json.Marshaler
 func (r *Report) MarshalJSON() ([]byte, error) {
 	d := struct {
 		DefinitionID               string    `json:"definition_id" yaml:"definition_id"`

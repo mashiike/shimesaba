@@ -9,6 +9,7 @@ import (
 	"github.com/fujiwara/logutils"
 )
 
+//Setup logger
 func Setup(out io.Writer, minLevel string) {
 	filter := &logutils.LevelFilter{
 		Levels: []logutils.LogLevel{"debug", "info", "warn", "error"},

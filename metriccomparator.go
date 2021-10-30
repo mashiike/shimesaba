@@ -11,17 +11,20 @@ import (
 	"time"
 )
 
+// MetricComparator is a comparison using multiple metrics
 type MetricComparator struct {
-	leftExpr        MetricExpr
+	leftExpr        metricExpr
 	comparativeFunc func(float64, float64) bool
 	rightValue      float64
 }
 
+// Reserved errors
 var (
 	ErrNotComparativeExpression = errors.New("this expr is not comparative")
 	ErrExprRightNotLiteral      = errors.New("expr right side is value literal")
 )
 
+//NewMetricComparator creates MetricComparator from expr string
 func NewMetricComparator(str string) (*MetricComparator, error) {
 	expr, err := parser.ParseExpr(str)
 	if err != nil {
@@ -51,6 +54,7 @@ func NewMetricComparator(str string) (*MetricComparator, error) {
 	return metricComparator, nil
 }
 
+// Eval performs a comparison
 func (mc MetricComparator) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]bool, error) {
 	values, err := mc.leftExpr.Eval(metrics, startAt, endAt)
 	if err != nil {
@@ -107,13 +111,13 @@ func parseAsFloat(expr ast.Expr) (float64, bool) {
 	}
 }
 
-type MetricExpr interface {
+type metricExpr interface {
 	Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error)
 }
 
-type MetricRefExpr string
+type metricRefExpr string
 
-func (e MetricRefExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
+func (e metricRefExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
 	metric, ok := metrics.Get(string(e))
 	if !ok {
 		return nil, fmt.Errorf("metric `%s` not found", e)
@@ -121,12 +125,12 @@ func (e MetricRefExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time
 	return metric.GetValues(startAt, endAt), nil
 }
 
-func parseAsMtricExpr(expr ast.Expr) (MetricExpr, error) {
+func parseAsMtricExpr(expr ast.Expr) (metricExpr, error) {
 	switch e := expr.(type) {
 	case *ast.CallExpr:
 		return parseAsFuncExpr(e)
 	case *ast.Ident:
-		return MetricRefExpr(e.Name), nil
+		return metricRefExpr(e.Name), nil
 	case *ast.BinaryExpr:
 		return parseAsBinalyOpExpr(e)
 	default:
@@ -134,17 +138,17 @@ func parseAsMtricExpr(expr ast.Expr) (MetricExpr, error) {
 	}
 }
 
-type MetricRateFuncExpr struct {
-	Numerator   MetricExpr
-	Denominator MetricExpr
+type metricRateFuncExpr struct {
+	Numerator   metricExpr
+	Denominator metricExpr
 }
 
-func parseAsFuncExpr(expr *ast.CallExpr) (MetricExpr, error) {
+func parseAsFuncExpr(expr *ast.CallExpr) (metricExpr, error) {
 	funcID, ok := expr.Fun.(*ast.Ident)
 	if !ok {
 		return nil, errors.New("unknown func id")
 	}
-	args := make([]MetricExpr, 0, len(expr.Args))
+	args := make([]metricExpr, 0, len(expr.Args))
 	for i, arg := range expr.Args {
 		m, err := parseAsMtricExpr(arg)
 		if err != nil {
@@ -157,7 +161,7 @@ func parseAsFuncExpr(expr *ast.CallExpr) (MetricExpr, error) {
 		if len(args) != 2 {
 			return nil, fmt.Errorf("func_id:rate expected 2 args, provided %d args", len(args))
 		}
-		return &MetricRateFuncExpr{
+		return &metricRateFuncExpr{
 			Numerator:   args[0],
 			Denominator: args[1],
 		}, nil
@@ -167,7 +171,7 @@ func parseAsFuncExpr(expr *ast.CallExpr) (MetricExpr, error) {
 
 }
 
-func (e *MetricRateFuncExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
+func (e *metricRateFuncExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
 	numerator, err := e.Numerator.Eval(metrics, startAt, endAt)
 	if err != nil {
 		return nil, err
@@ -191,13 +195,13 @@ func (e *MetricRateFuncExpr) Eval(metrics Metrics, startAt, endAt time.Time) (ma
 	return ret, nil
 }
 
-type MetricBinalyOpExpr struct {
-	Left   MetricExpr
-	Right  MetricExpr
+type metricBinalyOpExpr struct {
+	Left   metricExpr
+	Right  metricExpr
 	OpFunc func(float64, float64) float64
 }
 
-func parseAsBinalyOpExpr(expr *ast.BinaryExpr) (MetricExpr, error) {
+func parseAsBinalyOpExpr(expr *ast.BinaryExpr) (metricExpr, error) {
 	left, err := parseAsMtricExpr(expr.X)
 	if err != nil {
 		return nil, err
@@ -215,14 +219,14 @@ func parseAsBinalyOpExpr(expr *ast.BinaryExpr) (MetricExpr, error) {
 	case token.MUL: // *
 		opFunc = func(f1, f2 float64) float64 { return f1 * f2 }
 	case token.QUO: // /
-		return &MetricRateFuncExpr{
+		return &metricRateFuncExpr{
 			Numerator:   left,
 			Denominator: right,
 		}, nil
 	default:
 		return nil, fmt.Errorf("parseAsBinalyOpExpr unknown op token %s", expr.Op)
 	}
-	e := &MetricBinalyOpExpr{
+	e := &metricBinalyOpExpr{
 		Left:   left,
 		Right:  right,
 		OpFunc: opFunc,
@@ -230,7 +234,7 @@ func parseAsBinalyOpExpr(expr *ast.BinaryExpr) (MetricExpr, error) {
 	return e, nil
 }
 
-func (e *MetricBinalyOpExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
+func (e *metricBinalyOpExpr) Eval(metrics Metrics, startAt, endAt time.Time) (map[time.Time]float64, error) {
 	leftValue, err := e.Left.Eval(metrics, startAt, endAt)
 	if err != nil {
 		return nil, err

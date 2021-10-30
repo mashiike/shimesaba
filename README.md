@@ -1,3 +1,6 @@
+![Latest GitHub release](https://img.shields.io/github/release/mashiike/shimesaba.svg)
+![Github Actions test](https://github.com/mashiike/shimesaba/workflows/Test/badge.svg?branch=main)
+[![Go Report Card](https://goreportcard.com/badge/mashiike/shimesaba)](https://goreportcard.com/report/mashiike/shimesaba) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mashiike/shimesaba/blob/master/LICENSE)
 # shimesaba
 
 For SRE to operate and monitor services using Mackerel.

@@ -11,6 +11,7 @@ import (
 	mackerel "github.com/mackerelio/mackerel-client-go"
 )
 
+//App manages life cycle
 type App struct {
 	repo Repository
 
@@ -21,11 +22,13 @@ type App struct {
 	maxCalculate time.Duration
 }
 
+//New creates an app
 func New(apikey string, cfg *Config) (*App, error) {
 	client := mackerel.NewClient(apikey)
 	return NewWithMackerelClient(client, cfg)
 }
 
+//NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 
 	definitions := make([]*Definition, 0, len(cfg.Definitions))
@@ -59,6 +62,7 @@ type runConfig struct {
 	backfill int
 }
 
+//RunOption is an App.Run option
 type RunOption interface {
 	apply(*runConfig)
 }
@@ -69,18 +73,21 @@ func (f runOptionFunc) apply(rc *runConfig) {
 	f(rc)
 }
 
+//DryRunOption is an option to output the calculated error budget as standard without posting it to Mackerel.
 func DryRunOption(dryRun bool) RunOption {
 	return runOptionFunc(func(rc *runConfig) {
 		rc.dryRun = dryRun
 	})
 }
 
+//BackfillOption specifies how many points of data to calculate retroactively from the current time.
 func BackfillOption(count int) RunOption {
 	return runOptionFunc(func(rc *runConfig) {
 		rc.backfill = count
 	})
 }
 
+//Run performs the calculation of the error bar calculation
 func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 	log.Printf("[info] start run")
 	rc := &runConfig{

@@ -11,6 +11,7 @@ import (
 	retry "github.com/shogo82148/go-retry"
 )
 
+// MackerelClient is an abstraction interface for mackerel-client-go.Client
 type MackerelClient interface {
 	FindHosts(param *mackerel.FindHostsParam) ([]*mackerel.Host, error)
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
@@ -18,10 +19,12 @@ type MackerelClient interface {
 	PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error
 }
 
+// Repository handles reading and writing data
 type Repository struct {
 	client MackerelClient
 }
 
+// NewRepository cretates Repository
 func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
 		client: client,
@@ -32,6 +35,7 @@ const (
 	fetchMetricMetricmit = 6 * time.Hour
 )
 
+// FetchMetric gets Metric using MatricConfig
 func (repo *Repository) FetchMetric(ctx context.Context, cfg *MetricConfig, startAt time.Time, endAt time.Time) (*Metric, error) {
 	iter := timeutils.NewIterator(startAt, endAt, fetchMetricMetricmit)
 	m := NewMetric(cfg)
@@ -89,6 +93,7 @@ func (repo *Repository) FetchMetric(ctx context.Context, cfg *MetricConfig, star
 	return m, nil
 }
 
+// FetchMetrics gets metrics togetheri
 func (repo *Repository) FetchMetrics(ctx context.Context, cfgs MetricConfigs, startAt time.Time, endAt time.Time) (Metrics, error) {
 	ms := make(Metrics)
 	for _, cfg := range cfgs {
@@ -112,6 +117,7 @@ const (
 	mackerelMetricPrefix = "shimesaba"
 )
 
+// SaveReports posts Reports to Mackerel
 func (repo *Repository) SaveReports(ctx context.Context, reports []*Report) error {
 	services := make(map[string][]*mackerel.MetricValue)
 	for _, report := range reports {

@@ -9,6 +9,7 @@ import (
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
+// Metric handles aggregated Mackerel metrics
 type Metric struct {
 	id                  string
 	values              map[time.Time][]float64
@@ -66,10 +67,12 @@ func getAggregationMethod(str string) func([]float64) float64 {
 
 }
 
+// ID is the identifier of the metric
 func (m *Metric) ID() string {
 	return m.id
 }
 
+// AppendValue adds a value to the metric
 func (m *Metric) AppendValue(t time.Time, v interface{}) error {
 	t = t.Truncate(m.aggregationInterval)
 
@@ -107,6 +110,7 @@ func (m *Metric) AppendValue(t time.Time, v interface{}) error {
 	return nil
 }
 
+// GetValue gets the value at the specified time
 func (m *Metric) GetValue(t time.Time) (float64, bool) {
 	t = t.Truncate(m.aggregationInterval)
 	values, ok := m.values[t]
@@ -116,6 +120,7 @@ func (m *Metric) GetValue(t time.Time) (float64, bool) {
 	return m.aggregationMethod(values), true
 }
 
+// GetValues ​​gets the values ​​for the specified time period
 func (m *Metric) GetValues(startAt time.Time, endAt time.Time) map[time.Time]float64 {
 	iter := timeutils.NewIterator(
 		startAt,
@@ -132,28 +137,35 @@ func (m *Metric) GetValues(startAt time.Time, endAt time.Time) map[time.Time]flo
 	return ret
 }
 
+// StartAt returns the start time of the metric
 func (m *Metric) StartAt() time.Time {
 	return m.startAt
 }
 
+// EndAt returns the end time of the metric
 func (m *Metric) EndAt() time.Time {
 	return m.endAt.Add(m.aggregationInterval - time.Nanosecond)
 }
 
+// AggregationInterval returns the aggregation interval for metrics
 func (m *Metric) AggregationInterval() time.Duration {
 	return m.aggregationInterval
 }
 
+//String implements fmt.Stringer
 func (m *Metric) String() string {
 	return fmt.Sprintf("[id:%s len(values):%d aggregate_interval:%s, range:%s~%s<%s>]", m.id, len(m.values), m.aggregationInterval, m.startAt, m.endAt, m.endAt.Sub(m.startAt))
 }
 
+// Metrics is a collection of metrics
 type Metrics map[string]*Metric
 
+// Set adds a metric to the collection
 func (ms Metrics) Set(m *Metric) {
 	ms[m.ID()] = m
 }
 
+// Get uses an identifier to get the metric
 func (ms Metrics) Get(id string) (*Metric, bool) {
 	m, ok := ms[id]
 	return m, ok
@@ -167,10 +179,12 @@ func (ms Metrics) ToSlice() []*Metric {
 	return ret
 }
 
+// ToSlice converts the collection to Slice
 func (ms Metrics) String() string {
 	return fmt.Sprintf("%v", ms.ToSlice())
 }
 
+// StartAt returns the earliest start time in the metric in the collection
 func (ms Metrics) StartAt() time.Time {
 
 	startAt := time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC)
@@ -183,6 +197,7 @@ func (ms Metrics) StartAt() time.Time {
 	return startAt
 }
 
+// EndAt returns the latest end time of the metric in the collection
 func (ms Metrics) EndAt() time.Time {
 	endAt := time.Unix(0, 0).In(time.UTC)
 	for _, m := range ms {
@@ -193,6 +208,7 @@ func (ms Metrics) EndAt() time.Time {
 	return endAt
 }
 
+// AggregationInterval returns the longest aggregation period for the metric in the collection
 func (ms Metrics) AggregationInterval() time.Duration {
 	ret := time.Duration(0)
 	for _, m := range ms {
