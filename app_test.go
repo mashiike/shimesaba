@@ -40,7 +40,7 @@ func TestAppWithMock(t *testing.T) {
 				"shimesaba.error_budget_consumption.latency":            backfill,
 				"shimesaba.error_budget_consumption_percentage.latency": backfill,
 				"shimesaba.error_budget_percentage.latency":             backfill,
-				"shimesaba.fairule_time.latency":                        backfill,
+				"shimesaba.failure_time.latency":                        backfill,
 				"shimesaba.uptime.latency":                              backfill,
 			}
 			actual := make(map[string]int)
