@@ -28,7 +28,7 @@ metrics:
 
 x-definition-template: &definition-template
   service_name:  {{ must_env `POST_METRIC_SERVICE`}}
-  time_frame: 40320m #4weeks
+  time_frame: 28d #4weeks
   calculate_interval: 24h
   error_budget_size: 0.001
 

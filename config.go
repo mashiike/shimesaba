@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
 	gv "github.com/hashicorp/go-version"
 	gc "github.com/kayac/go-config"
+	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 //Config for App
@@ -93,7 +93,7 @@ func (c *MetricConfig) Restrict() error {
 		return errors.New("aggregation_interval is required")
 	}
 	var err error
-	c.aggregationInterval, err = parseDuration(c.AggregationInterval)
+	c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
 	if err != nil {
 		return fmt.Errorf("aggregation_interval is invalid format: %w", err)
 	}
@@ -107,7 +107,7 @@ func (c *MetricConfig) Restrict() error {
 func (c *MetricConfig) DurationAggregation() time.Duration {
 	if c.aggregationInterval == 0 {
 		var err error
-		c.aggregationInterval, err = parseDuration(c.AggregationInterval)
+		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
 		if err != nil {
 			panic(err)
 		}
@@ -216,7 +216,7 @@ func (c *DefinitionConfig) Restrict() error {
 		return errors.New("time_frame is required")
 	}
 	var err error
-	c.timeFrame, err = parseDuration(c.TimeFrame)
+	c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
 	if err != nil {
 		return fmt.Errorf("time_frame is invalid format: %w", err)
 	}
@@ -227,7 +227,7 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.CalculateInterval == "" {
 		return errors.New("calculate_interval is required")
 	}
-	c.calculateInterval, err = parseDuration(c.CalculateInterval)
+	c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
 	if err != nil {
 		return fmt.Errorf("calculate_interval is invalid format: %w", err)
 	}
@@ -244,7 +244,7 @@ func (c *DefinitionConfig) Restrict() error {
 func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
 	if c.timeFrame == 0 {
 		var err error
-		c.timeFrame, err = parseDuration(c.TimeFrame)
+		c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
 		if err != nil {
 			panic(err)
 		}
@@ -256,7 +256,7 @@ func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
 func (c *DefinitionConfig) DurationCalculate() time.Duration {
 	if c.calculateInterval == 0 {
 		var err error
-		c.calculateInterval, err = parseDuration(c.CalculateInterval)
+		c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
 		if err != nil {
 			panic(err)
 		}
@@ -392,14 +392,4 @@ func (c *Config) ValidateVersion(version string) error {
 // NewDefaultConfig creates a default configuration.
 func NewDefaultConfig() *Config {
 	return &Config{}
-}
-
-func parseDuration(str string) (time.Duration, error) {
-	if d, err := strconv.ParseUint(str, 10, 64); err == nil {
-		log.Printf("[warn] Setting an interval without a unit is deprecated. Please write `%s` as` %sm`", str, str)
-		return time.Duration(d) * time.Minute, nil
-	}
-
-	d, err := time.ParseDuration(str)
-	return d.Truncate(time.Minute), err
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	timeutil "github.com/mashiike/shimesaba/internal/timeutils"
+	"github.com/mashiike/shimesaba/internal/timeutils"
 	"github.com/stretchr/testify/require"
 )
 
@@ -118,7 +118,7 @@ func TestIterator(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(fmt.Sprintf("%s~%s[tick=%s,over=%v]", c.startAt, c.endAt, c.tick, c.enableOverWindow), func(t *testing.T) {
-			iter := timeutil.NewIterator(
+			iter := timeutils.NewIterator(
 				c.startAt,
 				c.endAt,
 				c.tick,
