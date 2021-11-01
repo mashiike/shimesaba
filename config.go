@@ -90,15 +90,16 @@ func (c *MetricConfig) Restrict() error {
 	c.AggregationMethod = coalesceString(c.AggregationMethod, "max")
 
 	if c.AggregationInterval == "" {
-		return errors.New("aggregation_interval is required")
-	}
-	var err error
-	c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
-	if err != nil {
-		return fmt.Errorf("aggregation_interval is invalid format: %w", err)
-	}
-	if c.aggregationInterval < time.Minute {
-		return fmt.Errorf("aggregation_interval must over or equal 1m")
+		c.aggregationInterval = time.Minute
+	} else {
+		var err error
+		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
+		if err != nil {
+			return fmt.Errorf("aggregation_interval is invalid format: %w", err)
+		}
+		if c.aggregationInterval < time.Minute {
+			return fmt.Errorf("aggregation_interval must over or equal 1m")
+		}
 	}
 	return nil
 }

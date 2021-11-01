@@ -85,20 +85,20 @@ metrics:
     type: host
     service_name: prod
     host_name: dummy-alb
-    aggregation_interval: 1
+    aggregation_interval: 1m
     aggregation_method: max
   - id: component_response_time
     name: component.dummy.response_time
     type: service
     service_name: prod
-    aggregation_interval: 1
+    aggregation_interval: 1m
     aggregation_method: avg
 
 definitions:
   - id: latency
     service_name: prod 
-    time_frame: 40320 #4weeks
-    calculate_interval: 60
+    time_frame: 28d #4weeks
+    calculate_interval: 1h
     error_budget_size: 0.001
     objectives:
       - expr: alb_p90_response_time <= 1.0
@@ -149,8 +149,8 @@ Specify the host name when searching for the host that is the target of host met
 
 ##### aggregation_interval
 
-Optional, default=1
-It's time to aggregate the metrics. The unit is minutes.
+Optional, default=1m
+It's time to aggregate the metrics.
 This is also the unit for determining SLO violations.
 For example, if you calculate SLI using a metric with an aggregation interval of 5 minutes, you will get an SLO violation check in 5 minute increments.
 
@@ -188,14 +188,14 @@ The service to which the service metric is posted
 ##### time_frame
 
 Requied. 
-The size of the time frame of the rolling window. The unit is minutes.  
+The size of the time frame of the rolling window.  
 For example, if you specify 40320 minutes, the error budget will be calculated for the SLI for the last 4 weeks.  
 
 ##### calculate_interval
 
 Requied.  
 
-The shift width of the rolling window. The unit is minutes. Service metrics are posted to Mackerel at individually specified time intervals.  
+The shift width of the rolling window. Service metrics are posted to Mackerel at individually specified time intervals.  
 This width is recommended to be shorter than 1440 minutes (1 day) because Mackerel ignores postings of time stamp metrics before 24 hours *1.  
 
 *1 [https://mackerel.io/ja/api-docs/entry/service-metrics#post](https://mackerel.io/ja/api-docs/entry/service-metrics#post)
