@@ -10,6 +10,7 @@ import (
 
 	gv "github.com/hashicorp/go-version"
 	gc "github.com/kayac/go-config"
+	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 //Config for App
@@ -30,8 +31,10 @@ type MetricConfig struct {
 	ServiceName         string     `yaml:"service_name" json:"service_name"`
 	Roles               []string   `yaml:"roles" json:"roles"`
 	HostName            string     `yaml:"host_name" json:"host_name"`
-	AggregationInterval int64      `yaml:"aggregation_interval" json:"aggregation_interval"`
+	AggregationInterval string     `yaml:"aggregation_interval" json:"aggregation_interval"`
 	AggregationMethod   string     `json:"aggregation_method" yaml:"aggregation_method"`
+
+	aggregationInterval time.Duration
 }
 
 //String output json
@@ -58,9 +61,7 @@ func (c *MetricConfig) MergeInto(o *MetricConfig) {
 	}
 	c.ServiceName = coalesceString(o.ServiceName, c.ServiceName)
 	c.HostName = coalesceString(o.HostName, c.HostName)
-	if o.AggregationInterval != 0 {
-		c.AggregationInterval = o.AggregationInterval
-	}
+	c.AggregationInterval = coalesceString(o.AggregationInterval, c.AggregationInterval)
 	c.AggregationMethod = coalesceString(o.AggregationMethod, c.AggregationMethod)
 	roles := make(map[string]struct{}, len(c.Roles))
 	for _, role := range c.Roles {
@@ -87,10 +88,32 @@ func (c *MetricConfig) Restrict() error {
 		return errors.New("type is required")
 	}
 	c.AggregationMethod = coalesceString(c.AggregationMethod, "max")
-	if c.AggregationInterval <= 0 {
-		c.AggregationInterval = 1
+
+	if c.AggregationInterval == "" {
+		c.aggregationInterval = time.Minute
+	} else {
+		var err error
+		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
+		if err != nil {
+			return fmt.Errorf("aggregation_interval is invalid format: %w", err)
+		}
+		if c.aggregationInterval < time.Minute {
+			return fmt.Errorf("aggregation_interval must over or equal 1m")
+		}
 	}
 	return nil
+}
+
+// DurationAggregation converts CalculateInterval as time.Duration
+func (c *MetricConfig) DurationAggregation() time.Duration {
+	if c.aggregationInterval == 0 {
+		var err error
+		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return c.aggregationInterval
 }
 
 //MetricConfigs is a collection of MetricConfig
@@ -151,19 +174,21 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 // DefinitionConfig is a setting related to SLI/SLO
 type DefinitionConfig struct {
 	ID                string             `json:"id" yaml:"id"`
-	TimeFrame         int64              `yaml:"time_frame" json:"time_frame"`
+	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
 	ServiceName       string             `json:"service_name" yaml:"service_name"`
 	ErrorBudgetSize   float64            `yaml:"error_budget_size" json:"error_budget_size"`
-	CalculateInterval int64              `yaml:"calculate_interval" json:"calculate_interval"`
+	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
+
+	calculateInterval time.Duration
+	timeFrame         time.Duration
 }
 
 // MergeInto merges DefinitionConfig together
 func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.ID = coalesceString(o.ID, c.ID)
-	if o.TimeFrame != 0 {
-		c.TimeFrame = o.TimeFrame
-	}
+	c.TimeFrame = coalesceString(o.TimeFrame, c.TimeFrame)
+	c.CalculateInterval = coalesceString(o.CalculateInterval, c.CalculateInterval)
 	if o.ErrorBudgetSize != 0.0 {
 		c.ErrorBudgetSize = o.ErrorBudgetSize
 	}
@@ -179,9 +204,6 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.ServiceName == "" {
 		return errors.New("service_name is required")
 	}
-	if c.TimeFrame <= 0 {
-		return errors.New("time_frame must over 0")
-	}
 	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
 		return errors.New("time_frame must between 1.0 and 0.0")
 	}
@@ -190,17 +212,57 @@ func (c *DefinitionConfig) Restrict() error {
 			return fmt.Errorf("objective[%d] %w", i, err)
 		}
 	}
+
+	if c.TimeFrame == "" {
+		return errors.New("time_frame is required")
+	}
+	var err error
+	c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
+	if err != nil {
+		return fmt.Errorf("time_frame is invalid format: %w", err)
+	}
+	if c.timeFrame < time.Minute {
+		return fmt.Errorf("time_frame must over or equal 1m")
+	}
+
+	if c.CalculateInterval == "" {
+		return errors.New("calculate_interval is required")
+	}
+	c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
+	if err != nil {
+		return fmt.Errorf("calculate_interval is invalid format: %w", err)
+	}
+	if c.calculateInterval < time.Minute {
+		return fmt.Errorf("calculate_interval must over or equal 1m")
+	}
+	if c.calculateInterval >= 24*time.Hour {
+		log.Printf("[warn] We do not recommend calculate_interval=`%s` setting. because can not post service metrics older than 24 hours to Mackerel.\n", c.CalculateInterval)
+	}
 	return nil
 }
 
 // DurationTimeFrame converts TimeFrame as time.Duration
 func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
-	return time.Duration(c.TimeFrame) * time.Minute
+	if c.timeFrame == 0 {
+		var err error
+		c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return c.timeFrame
 }
 
 // DurationCalculate converts CalculateInterval as time.Duration
 func (c *DefinitionConfig) DurationCalculate() time.Duration {
-	return time.Duration(c.CalculateInterval) * time.Minute
+	if c.calculateInterval == 0 {
+		var err error
+		c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return c.calculateInterval
 }
 
 // Objective Config is a SLO setting

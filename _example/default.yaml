@@ -6,7 +6,7 @@ x-metric-template: &metric-template
   roles:
     - ALB
   host_name: {{ must_env `TARGET_ALB_NAME`}}
-  aggregation_interval: 1
+  aggregation_interval: 1m
   aggregation_method: max
 
 metrics:
@@ -28,8 +28,8 @@ metrics:
 
 x-definition-template: &definition-template
   service_name:  {{ must_env `POST_METRIC_SERVICE`}}
-  time_frame: 40320 #4weeks
-  calculate_interval: 1440
+  time_frame: 28d #4weeks
+  calculate_interval: 24h
   error_budget_size: 0.001
 
 definitions:

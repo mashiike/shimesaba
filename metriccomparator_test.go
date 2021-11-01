@@ -16,7 +16,7 @@ func TestMetricComparatorEval(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "dummy1",
-				AggregationInterval: 1,
+				AggregationInterval: "1m",
 				AggregationMethod:   "max",
 			},
 			appendValues: loadTupleFromCSV(t, "testdata/dummy1.csv"),
@@ -24,7 +24,7 @@ func TestMetricComparatorEval(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "dummy2",
-				AggregationInterval: 1,
+				AggregationInterval: "1m",
 				AggregationMethod:   "max",
 			},
 			appendValues: loadTupleFromCSV(t, "testdata/dummy2.csv"),

@@ -6,20 +6,20 @@ metrics:
     type: host
     service_name: shimesaba
     host_name: dummy-alb
-    aggregation_interval: 1
+    aggregation_interval: 1m
     aggregation_method: max
   - id: component_response_time
     name: component.dummy.response_time
     type: service
     service_name: shimesaba
-    aggregation_interval: 1
+    aggregation_interval: 1m
     aggregation_method: avg
 
 definitions:
   - id: latency
     service_name:  shimesaba
-    time_frame: 5
-    calculate_interval: 1
+    time_frame: 5m
+    calculate_interval: 1m
     error_budget_size: 0.1
     objectives:
       - expr: alb_p90_response_time <= 1.0
