@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 
@@ -36,6 +37,7 @@ var (
 	debug          bool
 	dryRun         bool
 	backfill       uint
+	version        bool
 	configFiles    stringSlice
 )
 
@@ -57,6 +59,7 @@ func main() {
 	flag.StringVar(&mackerelAPIKey, "mackerel-apikey", "", "for access mackerel API")
 	flag.BoolVar(&debug, "debug", false, "output debug log")
 	flag.BoolVar(&dryRun, "dry-run", false, "report output stdout and not put mackerel")
+	flag.BoolVar(&version, "version", false, "show version")
 	flag.UintVar(&backfill, "backfill", 3, "generate report before n point")
 	flag.VisitAll(envToFlag)
 	flag.Parse()
@@ -66,6 +69,11 @@ func main() {
 		minLevel = "debug"
 	}
 	logger.Setup(os.Stderr, minLevel)
+	if version {
+		log.Printf("[info] shimesaba version : %s", Version)
+		log.Printf("[info] go runtime version: %s", runtime.Version())
+		return
+	}
 	if backfill == 0 {
 		log.Println("[error] backfill count must positive avlue")
 		os.Exit(1)
