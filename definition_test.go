@@ -21,7 +21,15 @@ func TestDefinition(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "dummy3",
-				AggregationInterval: 1,
+				AggregationInterval: "1",
+				AggregationMethod:   "max",
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
+		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "dummy3",
+				AggregationInterval: "1m",
 				AggregationMethod:   "max",
 			},
 			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
@@ -42,8 +50,8 @@ func TestDefinition(t *testing.T) {
 		{
 			defCfg: &shimesaba.DefinitionConfig{
 				ID:                "test1",
-				TimeFrame:         10,
-				CalculateInterval: 5,
+				TimeFrame:         "10m",
+				CalculateInterval: "5m",
 				ErrorBudgetSize:   0.3,
 				Objectives: []*shimesaba.ObjectiveConfig{
 					{

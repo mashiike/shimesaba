@@ -23,7 +23,7 @@ func NewMetric(cfg *MetricConfig) *Metric {
 	return &Metric{
 		id:                  cfg.ID,
 		values:              make(map[time.Time][]float64),
-		aggregationInterval: time.Duration(cfg.AggregationInterval) * time.Minute,
+		aggregationInterval: cfg.DurationAggregation(),
 		aggregationMethod:   getAggregationMethod(cfg.AggregationMethod),
 		startAt:             time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
 		endAt:               time.Unix(0, 0).In(time.UTC),

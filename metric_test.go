@@ -23,7 +23,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "max_values",
-				AggregationInterval: 1,
+				AggregationInterval: "1m",
 				AggregationMethod:   "max",
 			},
 			appendValues: appendValues,
@@ -37,7 +37,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "total_values",
-				AggregationInterval: 1,
+				AggregationInterval: "1m",
 				AggregationMethod:   "total",
 			},
 			appendValues: appendValues,
@@ -51,7 +51,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "avg_values",
-				AggregationInterval: 1,
+				AggregationInterval: "1m",
 				AggregationMethod:   "avg",
 			},
 			appendValues: appendValues,
@@ -65,7 +65,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "max_agg_5min_values",
-				AggregationInterval: 5,
+				AggregationInterval: "5m",
 				AggregationMethod:   "max",
 			},
 			appendValues: appendValues,
@@ -78,7 +78,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "default_agg_5min_values",
-				AggregationInterval: 5,
+				AggregationInterval: "5m",
 			},
 			appendValues: appendValues,
 			expected: map[time.Time]float64{
@@ -90,7 +90,7 @@ func TestMetricGetValue(t *testing.T) {
 		{
 			cfg: &shimesaba.MetricConfig{
 				ID:                  "hoge_agg_5min_values",
-				AggregationInterval: 5,
+				AggregationInterval: "5m",
 				AggregationMethod:   "hoge",
 			},
 			appendValues: appendValues,
