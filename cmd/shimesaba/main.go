@@ -43,16 +43,12 @@ var (
 
 func main() {
 	paths := strings.Split(os.Getenv("SSMWRAP_PATHS"), ",")
+	var ssmwrapErr error
 	if len(paths) > 0 {
-		err := ssmwrap.Export(ssmwrap.ExportOptions{
+		ssmwrapErr = ssmwrap.Export(ssmwrap.ExportOptions{
 			Paths:   paths,
 			Retries: 3,
 		})
-		if err != nil {
-			logger.Setup(os.Stderr, "info")
-			log.Printf("[error] ssmwrap.Export failed: %s\n", err)
-			os.Exit(1)
-		}
 	}
 
 	flag.Var(&configFiles, "config", "config file path, can set multiple")
@@ -73,6 +69,11 @@ func main() {
 		log.Printf("[info] shimesaba version : %s", Version)
 		log.Printf("[info] go runtime version: %s", runtime.Version())
 		return
+	}
+	if ssmwrapErr != nil {
+		logger.Setup(os.Stderr, "info")
+		log.Printf("[error] ssmwrap.Export failed: %s\n", ssmwrapErr)
+		os.Exit(1)
 	}
 	if backfill == 0 {
 		log.Println("[error] backfill count must positive avlue")
