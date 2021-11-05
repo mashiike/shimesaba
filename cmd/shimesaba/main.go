@@ -72,7 +72,7 @@ func main() {
 	}
 	if ssmwrapErr != nil {
 		logger.Setup(os.Stderr, "info")
-		log.Printf("[error] ssmwrap.Export failed: %s\n", err)
+		log.Printf("[error] ssmwrap.Export failed: %s\n", ssmwrapErr)
 		os.Exit(1)
 	}
 	if backfill == 0 {
