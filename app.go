@@ -3,8 +3,10 @@ package shimesaba
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/Songmu/flextime"
@@ -97,6 +99,9 @@ func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 	for _, opt := range opts {
 		opt.apply(rc)
 	}
+	if rc.backfill <= 0 {
+		return errors.New("backfill must over 0")
+	}
 	log.Println("[debug]", app.metricConfigs)
 	now := flextime.Now()
 	startAt := now.Truncate(app.maxCalculate).
@@ -113,6 +118,16 @@ func (app *App) Run(ctx context.Context, opts ...RunOption) error {
 		reports, err := d.CreateRepoorts(ctx, metrics)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
+		}
+		if len(reports) > rc.backfill {
+			sort.Slice(reports, func(i, j int) bool {
+				return reports[i].DataPoint.Before(reports[j].DataPoint)
+			})
+			n := len(reports) - rc.backfill
+			if n < 0 {
+				n = 0
+			}
+			reports = reports[n:]
 		}
 		if rc.dryRun {
 			log.Printf("[info] dryrun! output stdout reports[%s]\n", d.ID())
