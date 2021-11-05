@@ -34,6 +34,23 @@ func TestAppWithMock(t *testing.T) {
 						"shimesaba.uptime.latency":                              backfill,
 					},
 				},
+				{
+					configFile: "testdata/multiple.yaml",
+					excepted: map[string]int{
+						"shimesaba.error_budget.latency":                        backfill,
+						"shimesaba.error_budget_consumption.latency":            backfill,
+						"shimesaba.error_budget_consumption_percentage.latency": backfill,
+						"shimesaba.error_budget_percentage.latency":             backfill,
+						"shimesaba.failure_time.latency":                        backfill,
+						"shimesaba.uptime.latency":                              backfill,
+						"shimesaba.error_budget.check":                          backfill,
+						"shimesaba.error_budget_consumption.check":              backfill,
+						"shimesaba.error_budget_consumption_percentage.check":   backfill,
+						"shimesaba.error_budget_percentage.check":               backfill,
+						"shimesaba.failure_time.check":                          backfill,
+						"shimesaba.uptime.check":                                backfill,
+					},
+				},
 			}
 			for _, c := range cases {
 				t.Run(c.configFile, func(t *testing.T) {
@@ -135,6 +152,6 @@ func (m *mockMackerelClient) FetchServiceMetricValues(serviceName string, metric
 }
 func (m *mockMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	require.Equal(m.t, "shimesaba", serviceName)
-	m.posted = metricValues
+	m.posted = append(m.posted, metricValues...)
 	return nil
 }
