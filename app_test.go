@@ -19,38 +19,67 @@ func TestAppWithMock(t *testing.T) {
 	backfillCounts := []int{3, 4, 5}
 	for _, backfill := range backfillCounts {
 		t.Run(fmt.Sprintf("backfill=%d", backfill), func(t *testing.T) {
-			var buf bytes.Buffer
-			logger.Setup(&buf, "debug")
-			defer func() {
-				t.Log(buf.String())
-				logger.Setup(os.Stderr, "info")
-			}()
-			cfg := shimesaba.NewDefaultConfig()
-			cfg.Load("testdata/simple.yaml")
-			client := newMockMackerelClient(t)
-			app, err := shimesaba.NewWithMackerelClient(client, cfg)
-			require.NoError(t, err, "create app")
-			restore := flextime.Set(time.Date(2021, 10, 1, 0, 21, 0, 0, time.UTC))
-			defer restore()
-			err = app.Run(context.Background(), shimesaba.BackfillOption(backfill))
-			require.NoError(t, err, "run app")
+			cases := []struct {
+				configFile string
+				excepted   map[string]int
+			}{
+				{
+					configFile: "testdata/simple.yaml",
+					excepted: map[string]int{
+						"shimesaba.error_budget.latency":                        backfill,
+						"shimesaba.error_budget_consumption.latency":            backfill,
+						"shimesaba.error_budget_consumption_percentage.latency": backfill,
+						"shimesaba.error_budget_percentage.latency":             backfill,
+						"shimesaba.failure_time.latency":                        backfill,
+						"shimesaba.uptime.latency":                              backfill,
+					},
+				},
+				{
+					configFile: "testdata/multiple.yaml",
+					excepted: map[string]int{
+						"shimesaba.error_budget.latency":                        backfill,
+						"shimesaba.error_budget_consumption.latency":            backfill,
+						"shimesaba.error_budget_consumption_percentage.latency": backfill,
+						"shimesaba.error_budget_percentage.latency":             backfill,
+						"shimesaba.failure_time.latency":                        backfill,
+						"shimesaba.uptime.latency":                              backfill,
+						"shimesaba.error_budget.check":                          backfill,
+						"shimesaba.error_budget_consumption.check":              backfill,
+						"shimesaba.error_budget_consumption_percentage.check":   backfill,
+						"shimesaba.error_budget_percentage.check":               backfill,
+						"shimesaba.failure_time.check":                          backfill,
+						"shimesaba.uptime.check":                                backfill,
+					},
+				},
+			}
+			for _, c := range cases {
+				t.Run(c.configFile, func(t *testing.T) {
+					var buf bytes.Buffer
+					logger.Setup(&buf, "debug")
+					defer func() {
+						t.Log(buf.String())
+						logger.Setup(os.Stderr, "info")
+					}()
+					cfg := shimesaba.NewDefaultConfig()
+					cfg.Load(c.configFile)
+					client := newMockMackerelClient(t)
+					app, err := shimesaba.NewWithMackerelClient(client, cfg)
+					require.NoError(t, err, "create app")
+					restore := flextime.Set(time.Date(2021, 10, 1, 0, 21, 0, 0, time.UTC))
+					defer restore()
+					err = app.Run(context.Background(), shimesaba.BackfillOption(backfill))
+					require.NoError(t, err, "run app")
 
-			excepted := map[string]int{
-				"shimesaba.error_budget.latency":                        backfill,
-				"shimesaba.error_budget_consumption.latency":            backfill,
-				"shimesaba.error_budget_consumption_percentage.latency": backfill,
-				"shimesaba.error_budget_percentage.latency":             backfill,
-				"shimesaba.failure_time.latency":                        backfill,
-				"shimesaba.uptime.latency":                              backfill,
+					actual := make(map[string]int)
+					for _, v := range client.posted {
+						if _, ok := actual[v.Name]; !ok {
+							actual[v.Name] = 0
+						}
+						actual[v.Name]++
+					}
+					require.EqualValues(t, c.excepted, actual)
+				})
 			}
-			actual := make(map[string]int)
-			for _, v := range client.posted {
-				if _, ok := actual[v.Name]; !ok {
-					actual[v.Name] = 0
-				}
-				actual[v.Name]++
-			}
-			require.EqualValues(t, excepted, actual)
 		})
 	}
 }
@@ -123,6 +152,6 @@ func (m *mockMackerelClient) FetchServiceMetricValues(serviceName string, metric
 }
 func (m *mockMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	require.Equal(m.t, "shimesaba", serviceName)
-	m.posted = metricValues
+	m.posted = append(m.posted, metricValues...)
 	return nil
 }
