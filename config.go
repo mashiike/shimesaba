@@ -10,6 +10,7 @@ import (
 
 	gv "github.com/hashicorp/go-version"
 	gc "github.com/kayac/go-config"
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -269,7 +270,7 @@ func (c *DefinitionConfig) DurationCalculate() time.Duration {
 type ObjectiveConfig struct {
 	Expr string `yaml:"expr" json:"expr"`
 
-	metricComparator *MetricComparator
+	comparator evaluator.Comparator
 }
 
 // Restrict restricts a configuration.
@@ -277,17 +278,33 @@ func (c *ObjectiveConfig) Restrict() error {
 	if c.Expr == "" {
 		return errors.New("exer is required")
 	}
-	m, err := NewMetricComparator(c.Expr)
-	if err != nil {
-		return fmt.Errorf("build expr failed: %w", err)
+	if err := c.buildComparator(); err != nil {
+		return err
 	}
-	c.metricComparator = m
 	return nil
 }
 
-// GetMetricComparator returns a MetricComparator generated from ObjectiveConfig
-func (c *ObjectiveConfig) GetMetricComparator() *MetricComparator {
-	return c.metricComparator
+func (c *ObjectiveConfig) buildComparator() error {
+	e, err := evaluator.New(c.Expr)
+	if err != nil {
+		return fmt.Errorf("build expr failed: %w", err)
+	}
+	var ok bool
+	c.comparator, ok = e.AsComparator()
+	if !ok {
+		return errors.New("exer is not comparative")
+	}
+	return nil
+}
+
+// GetComparator returns a Comparator generated from ObjectiveConfig
+func (c *ObjectiveConfig) GetComparator() evaluator.Comparator {
+	if c.comparator == nil {
+		if err := c.buildComparator(); err != nil {
+			panic(err)
+		}
+	}
+	return c.comparator
 }
 
 // DefinitionConfigs is a collection of DefinitionConfigs that corrects the uniqueness of IDs.
