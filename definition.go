@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -18,18 +19,14 @@ type Definition struct {
 	calculate       time.Duration
 	errorBudgetSize float64
 
-	objectives []*MetricComparator
+	objectives []evaluator.Comparator
 }
 
 //NewDefinition creates Definition from DefinitionConfig
 func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
-	objectives := make([]*MetricComparator, 0, len(cfg.Objectives))
+	objectives := make([]evaluator.Comparator, 0, len(cfg.Objectives))
 	for _, ocfg := range cfg.Objectives {
-		comparator, err := NewMetricComparator(ocfg.Expr)
-		if err != nil {
-			return nil, err
-		}
-		objectives = append(objectives, comparator)
+		objectives = append(objectives, ocfg.GetComparator())
 	}
 	return &Definition{
 		id:              cfg.ID,
@@ -55,7 +52,7 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 			return nil, ctx.Err()
 		default:
 		}
-		isUp, err := o.Eval(metrics, metrics.StartAt(), metrics.EndAt())
+		isUp, err := MetricsComparate(o, metrics, metrics.StartAt(), metrics.EndAt())
 		if err != nil {
 			return nil, err
 		}
@@ -173,4 +170,35 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 		ErrorBudgetConsumptionRate: r.ErrorBudgetConsumptionRate(),
 	}
 	return json.Marshal(d)
+}
+
+func MetricsComparate(c evaluator.Comparator, metrics Metrics, startAt, endAt time.Time) (map[time.Time]bool, error) {
+
+	variables := make(map[time.Time]evaluator.Variables)
+	for name, metric := range metrics {
+		values := metric.GetValues(startAt, endAt)
+		for t, v := range values {
+			variable, ok := variables[t]
+			if !ok {
+				variable = make(evaluator.Variables)
+			}
+			variable[name] = v
+			variables[t] = variable
+		}
+	}
+	n := len(metrics)
+	ret := make(map[time.Time]bool, len(variables))
+	for t, v := range variables {
+		if len(v) == n {
+			b, err := c.Compare(v)
+			if evaluator.IsDivideByZero(err) {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			ret[t] = b
+		}
+	}
+	return ret, nil
 }
