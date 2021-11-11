@@ -191,7 +191,7 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 	values = append(values, &mackerel.MetricValue{
 		Name:  fmt.Sprintf("%s.error_budget_consumption_percentage.%s", mackerelMetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
-		Value: report.ErrorBudgetConsumptionRate(),
+		Value: report.ErrorBudgetConsumptionRate() * 100.0,
 	})
 	values = append(values, &mackerel.MetricValue{
 		Name:  fmt.Sprintf("%s.uptime.%s", mackerelMetricPrefix, report.DefinitionID),
