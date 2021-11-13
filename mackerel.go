@@ -2,6 +2,7 @@ package shimesaba
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -17,6 +18,9 @@ type MackerelClient interface {
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error
+
+	FindDashboards() ([]*mackerel.Dashboard, error)
+	FindDashboard(dashboardID string) (*mackerel.Dashboard, error)
 }
 
 // Repository handles reading and writing data
@@ -204,4 +208,37 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 		Value: report.FailureTime.Minutes(),
 	})
 	return values
+}
+
+//Dashboard is alieas of mackerel.Dashboard
+type Dashboard = mackerel.Dashboard
+
+// FindDashboard get Mackerel Dashboard
+func (repo *Repository) FindDashboard(dashboardIDOrURL string) (*Dashboard, error) {
+	dashboards, _ := repo.client.FindDashboards()
+	var id string
+	for _, d := range dashboards {
+		if d.ID == dashboardIDOrURL {
+			id = d.ID
+			break
+		}
+		if d.URLPath == dashboardIDOrURL {
+			id = d.ID
+			break
+		}
+	}
+	if id == "" {
+		return nil, errors.New("dashboard not found")
+	}
+
+	//Get Widgets
+	dashboard, err := repo.client.FindDashboard(id)
+	if err != nil {
+		return nil, err
+	}
+
+	dashboard.ID = ""
+	dashboard.CreatedAt = 0
+	dashboard.UpdatedAt = 0
+	return dashboard, nil
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -22,6 +23,8 @@ type App struct {
 
 	maxTimeFrame time.Duration
 	maxCalculate time.Duration
+
+	dashboardPath string
 }
 
 //New creates an app
@@ -55,6 +58,7 @@ func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 		definitions:   definitions,
 		maxTimeFrame:  maxTimeFrame,
 		maxCalculate:  maxCalculate,
+		dashboardPath: filepath.Join(cfg.configFilePath, cfg.Dashboard),
 	}
 	return app, nil
 }

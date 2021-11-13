@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -21,19 +22,21 @@ type Config struct {
 	Metrics     MetricConfigs     `yaml:"metrics" json:"metrics"`
 	Definitions DefinitionConfigs `yaml:"definitions" json:"definitions"`
 
+	Dashboard          string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
+	configFilePath     string
 	versionConstraints gv.Constraints
 }
 
 //MetricConfig handles metric information obtained from Mackerel
 type MetricConfig struct {
-	ID                  string     `yaml:"id" json:"id"`
-	Type                MetricType `yaml:"type" json:"type"`
-	Name                string     `yaml:"name" json:"name"`
-	ServiceName         string     `yaml:"service_name" json:"service_name"`
-	Roles               []string   `yaml:"roles" json:"roles"`
-	HostName            string     `yaml:"host_name" json:"host_name"`
-	AggregationInterval string     `yaml:"aggregation_interval" json:"aggregation_interval"`
-	AggregationMethod   string     `json:"aggregation_method" yaml:"aggregation_method"`
+	ID                  string     `yaml:"id,omitempty" json:"id,omitempty"`
+	Type                MetricType `yaml:"type,omitempty" json:"type,omitempty"`
+	Name                string     `yaml:"name,omitempty" json:"name,omitempty"`
+	ServiceName         string     `yaml:"service_name,omitempty" json:"service_name,omitempty"`
+	Roles               []string   `yaml:"roles,omitempty" json:"roles,omitempty"`
+	HostName            string     `yaml:"host_name,omitempty" json:"host_name,omitempty"`
+	AggregationInterval string     `yaml:"aggregation_interval,omitempty" json:"aggregation_interval,omitempty"`
+	AggregationMethod   string     `json:"aggregation_method,omitempty" yaml:"aggregation_method,omitempty"`
 
 	aggregationInterval time.Duration
 }
@@ -366,6 +369,7 @@ func (c *Config) Load(paths ...string) error {
 	if err := gc.LoadWithEnv(c, paths...); err != nil {
 		return err
 	}
+	c.configFilePath = filepath.Dir(paths[len(paths)-1])
 	return c.Restrict()
 }
 

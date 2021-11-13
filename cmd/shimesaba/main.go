@@ -62,6 +62,10 @@ func main() {
 				Name:  "run",
 				Usage: "run shimesaba. this is main feature",
 				Action: func(c *cli.Context) error {
+					if c.Args().First() == "help" {
+						cli.ShowAppHelp(c)
+						return nil
+					}
 					if c.Int("backfill") <= 0 {
 						return errors.New("backfill count must positive value")
 					}
@@ -90,6 +94,32 @@ func main() {
 						Value:       3,
 						Usage:       "generate report before n point",
 						EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+					},
+				},
+			},
+			{
+				Name:  "dashboard",
+				Usage: "manage mackerel dashboard for SLI/SLO",
+				Subcommands: []*cli.Command{
+					{
+						Name:      "init",
+						Usage:     "import an existing mackerel dashboard",
+						UsageText: "shimesaba dashboard [global options] init <dashboard_id or dashbaord_url_path>",
+						Action: func(c *cli.Context) error {
+							if c.NArg() < 1 {
+								cli.ShowAppHelp(c)
+								return errors.New("dashboard_id is required")
+							}
+							if c.Args().First() == "help" {
+								cli.ShowAppHelp(c)
+								return nil
+							}
+							return app.DashboardInit(c.Context, c.Args().First())
+						},
+					},
+					{
+						Name:  "build",
+						Usage: "create or update mackerel dashboard",
 					},
 				},
 			},
