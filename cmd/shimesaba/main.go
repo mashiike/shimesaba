@@ -145,7 +145,6 @@ func main() {
 			minLevel = "debug"
 		}
 		logger.Setup(os.Stderr, minLevel)
-		log.Println("[debug] set log level ", minLevel)
 		switch c.Args().First() {
 		case "help", "h", "version":
 			return nil
