@@ -66,15 +66,12 @@ func main() {
 						cli.ShowAppHelp(c)
 						return nil
 					}
-					if c.Int("backfill") <= 0 {
-						return errors.New("backfill count must positive value")
-					}
-					opts := []shimesaba.RunOption{
+					optFns := []func(*shimesaba.Options){
 						shimesaba.DryRunOption(c.Bool("dry-run")),
 						shimesaba.BackfillOption(c.Int("backfill")),
 					}
 					handler := func(ctx context.Context) error {
-						return app.Run(ctx, opts...)
+						return app.Run(ctx, optFns...)
 					}
 					if isLabmda() {
 						lambda.Start(handler)
@@ -118,8 +115,23 @@ func main() {
 						},
 					},
 					{
-						Name:  "build",
-						Usage: "create or update mackerel dashboard",
+						Name:      "build",
+						Usage:     "create or update mackerel dashboard",
+						UsageText: "shimesaba dashboard [global options] build",
+						Action: func(c *cli.Context) error {
+							if c.Args().First() == "help" {
+								cli.ShowAppHelp(c)
+								return nil
+							}
+							return app.DashboardBuild(c.Context, shimesaba.DryRunOption(c.Bool("dry-run")))
+						},
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:    "dry-run",
+								Usage:   "dry run",
+								EnvVars: []string{"SHIMESABA_DRY_RUN"},
+							},
+						},
 					},
 				},
 			},
@@ -135,6 +147,7 @@ func main() {
 			minLevel = "debug"
 		}
 		logger.Setup(os.Stderr, minLevel)
+		log.Println("[debug] set log level ", minLevel)
 		switch c.Args().First() {
 		case "help", "h", "version":
 			return nil
