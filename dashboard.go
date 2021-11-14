@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	jsonnet "github.com/google/go-jsonnet"
 	gc "github.com/kayac/go-config"
@@ -80,11 +81,12 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 			objectives = append(objectives, obj.String())
 		}
 		definitions[def.id] = map[string]interface{}{
-			"TimeFrame":         timeutils.DurationString(def.timeFrame),
-			"ServiceName":       def.serviceName,
-			"CalculateInterval": timeutils.DurationString(def.calculate),
-			"ErrorBudgetSize":   def.errorBudgetSize,
-			"Objectives":        objectives,
+			"TimeFrame":               timeutils.DurationString(def.timeFrame),
+			"ServiceName":             def.serviceName,
+			"CalculateInterval":       timeutils.DurationString(def.calculate),
+			"ErrorBudgetSize":         def.errorBudgetSize,
+			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame))),
+			"Objectives":              objectives,
 		}
 	}
 	data := map[string]interface{}{
