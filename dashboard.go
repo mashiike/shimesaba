@@ -85,7 +85,7 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 			"ServiceName":             def.serviceName,
 			"CalculateInterval":       timeutils.DurationString(def.calculate),
 			"ErrorBudgetSize":         def.errorBudgetSize,
-			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame))),
+			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame)).Truncate(time.Minute)),
 			"Objectives":              objectives,
 		}
 	}
