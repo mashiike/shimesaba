@@ -14,6 +14,7 @@ import (
 
 	jsonnet "github.com/google/go-jsonnet"
 	gc "github.com/kayac/go-config"
+	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 func (app *App) DashboardInit(ctx context.Context, dashboardIDOrURL string) error {
@@ -79,7 +80,11 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 			objectives = append(objectives, obj.String())
 		}
 		definitions[def.id] = map[string]interface{}{
-			"Objectives": objectives,
+			"TimeFrame":         timeutils.DurationString(def.timeFrame),
+			"ServiceName":       def.serviceName,
+			"CalculateInterval": timeutils.DurationString(def.calculate),
+			"ErrorBudgetSize":   def.errorBudgetSize,
+			"Objectives":        objectives,
 		}
 	}
 	data := map[string]interface{}{
