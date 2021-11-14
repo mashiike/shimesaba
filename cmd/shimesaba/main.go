@@ -19,13 +19,12 @@ import (
 )
 
 var (
-	Version = "current"
-	app     *shimesaba.App
+	Version    = "current"
+	ssmwrapErr error
 )
 
 func main() {
 	paths := strings.Split(os.Getenv("SSMWRAP_PATHS"), ",")
-	var ssmwrapErr error
 	if len(paths) > 0 {
 		ssmwrapErr = ssmwrap.Export(ssmwrap.ExportOptions{
 			Paths:   paths,
@@ -37,17 +36,15 @@ func main() {
 		Usage: "A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:     "config",
-				Aliases:  []string{"c"},
-				Usage:    "config file path, can set multiple",
-				Required: true,
-				EnvVars:  []string{"CONFIG", "SHIMESABA_CONFIG"},
+				Name:    "config",
+				Aliases: []string{"c"},
+				Usage:   "config file path, can set multiple",
+				EnvVars: []string{"CONFIG", "SHIMESABA_CONFIG"},
 			},
 			&cli.StringFlag{
 				Name:        "mackerel-apikey",
 				Aliases:     []string{"k"},
 				Usage:       "for access mackerel API",
-				Required:    true,
 				DefaultText: "*********",
 				EnvVars:     []string{"MACKEREL_APIKEY", "SHIMESABA_MACKEREL_APIKEY"},
 			},
@@ -59,12 +56,13 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			{
-				Name:  "run",
-				Usage: "run shimesaba. this is main feature",
+				Name:      "run",
+				Usage:     "run shimesaba. this is main feature",
+				UsageText: "shimesaba -config <config file> run [command options]",
 				Action: func(c *cli.Context) error {
-					if c.Args().First() == "help" {
-						cli.ShowAppHelp(c)
-						return nil
+					app, err := buildApp(c)
+					if err != nil {
+						return err
 					}
 					optFns := []func(*shimesaba.Options){
 						shimesaba.DryRunOption(c.Bool("dry-run")),
@@ -107,9 +105,9 @@ func main() {
 								cli.ShowAppHelp(c)
 								return errors.New("dashboard_id is required")
 							}
-							if c.Args().First() == "help" {
-								cli.ShowAppHelp(c)
-								return nil
+							app, err := buildApp(c)
+							if err != nil {
+								return err
 							}
 							return app.DashboardInit(c.Context, c.Args().First())
 						},
@@ -119,9 +117,9 @@ func main() {
 						Usage:     "create or update mackerel dashboard",
 						UsageText: "shimesaba dashboard [global options] build",
 						Action: func(c *cli.Context) error {
-							if c.Args().First() == "help" {
-								cli.ShowAppHelp(c)
-								return nil
+							app, err := buildApp(c)
+							if err != nil {
+								return err
 							}
 							return app.DashboardBuild(c.Context, shimesaba.DryRunOption(c.Bool("dry-run")))
 						},
@@ -153,21 +151,7 @@ func main() {
 			return nil
 		default:
 		}
-		if ssmwrapErr != nil {
-			return fmt.Errorf("ssmwrap.Export failed: %w", ssmwrapErr)
-		}
-		cfg := shimesaba.NewDefaultConfig()
-		if err := cfg.Load(c.StringSlice("config")...); err != nil {
-			return err
-		}
-		if err := cfg.ValidateVersion(Version); err != nil {
-			return err
-		}
-		var err error
-		app, err = shimesaba.New(c.String("mackerel-apikey"), cfg)
-		if err != nil {
-			return err
-		}
+
 		return nil
 	}
 
@@ -186,4 +170,18 @@ func main() {
 func isLabmda() bool {
 	return strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda") ||
 		os.Getenv("AWS_LAMBDA_RUNTIME_API") != ""
+}
+
+func buildApp(c *cli.Context) (*shimesaba.App, error) {
+	if ssmwrapErr != nil {
+		return nil, fmt.Errorf("ssmwrap.Export failed: %w", ssmwrapErr)
+	}
+	cfg := shimesaba.NewDefaultConfig()
+	if err := cfg.Load(c.StringSlice("config")...); err != nil {
+		return nil, err
+	}
+	if err := cfg.ValidateVersion(Version); err != nil {
+		return nil, err
+	}
+	return shimesaba.New(c.String("mackerel-apikey"), cfg)
 }
