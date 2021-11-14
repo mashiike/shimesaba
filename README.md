@@ -31,25 +31,53 @@ $ brew install mashiike/tap/shimesaba
 ### as CLI command
 
 ```console
-$ shimesaba -config config.yaml -mackerel-apikey <Mackerel API Key>
+$ shimesaba -config config.yaml -mackerel-apikey <Mackerel API Key> run
 ```
 
+```console
+NAME:
+   shimesaba - A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.
+
+USAGE:
+   shimesaba [global options] command [command options] [arguments...]
+
+VERSION:
+   current
+
+COMMANDS:
+   dashboard  manage mackerel dashboard for SLI/SLO
+   run        run shimesaba. this is main feature
+   help, h    Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --config value, -c value           config file path, can set multiple [$CONFIG, $SHIMESABA_CONFIG]
+   --debug                            output debug log (default: false) [$SHIMESABA_DEBUG]
+   --mackerel-apikey value, -k value  for access mackerel API (default: *********) [$MACKEREL_APIKEY, $SHIMESABA_MACKEREL_APIKEY]
+   --help, -h                         show help (default: false)
+   --version, -v                      print the version (default: false)
+2021/11/14 23:29:45 [error] Required flag "config" not set
 ```
-Usage of shimesaba:
-  -backfill uint
-        generate report before n point (default 3)
-  -config value
-        config file path, can set multiple
-  -debug
-        output debug log
-  -dry-run
-        report output stdout and not put mackerel
-  -mackerel-apikey string
-        for access mackerel API
+
+run command usage is follow
+```console
+$ shimesaba run --help
+NAME:
+   main run - run shimesaba. this is main feature
+
+USAGE:
+   shimesaba -config <config file> run [command options]
+
+OPTIONS:
+   --dry-run         report output stdout and not put mackerel (default: false) [$SHIMESABA_DRY_RUN]
+   --backfill value  generate report before n point (default: 3) [$BACKFILL, $SHIMESABA_BACKFILL]
+   --help, -h        show help (default: false)
 ```
+
 ### as AWS Lambda function
 
-`shimesaba` binary also runs as AWS Lambda function.
+`shimesaba` binary also runs as AWS Lambda function. 
+shimesaba implicitly behaves as a run command when run as a bootstrap with a Lambda Function
+
 
 CLI options can be specified from environment variables. For example, when `MACKEREL_APIKEY` environment variable is set, the value is set to `-mackerel-apikey` option.
 
@@ -60,7 +88,7 @@ Example Lambda functions configuration.
   "FunctionName": "shimesaba",
   "Environment": {
     "Variables": {
-      "CONFIG": "config.yaml",
+      "SHIMESABA_CONFIG": "config.yaml",
       "MACKEREL_APIKEY": "<Mackerel API KEY>"
     }
   },
@@ -103,6 +131,8 @@ definitions:
     objectives:
       - expr: alb_p90_response_time <= 1.0
       - expr: component_response_time <= 1.0
+
+dashboard: dashboard.jsonnet
 ```
 
 #### required_version
@@ -235,6 +265,71 @@ The meaning of this comparison formula is `If the HTTP request rate is 95% or hi
 It incorporates [github.com/handlename/ssmwrap](https://github.com/handlename/ssmwrap) for parameter management.  
 If you specify the path of the Parameter Store of AWS Systems Manager separated by commas, it will be output to the environment variable.  
 Useful when used as a Lambda function.  
+
+### Usage Dashboard subcommand.
+
+This subcommand can only be used when acting as a CLI.  
+If the dashboard of the config file contains the dashboard definition file, you can manage the dashboard JSON using Go Template.
+
+For example, you can build a simple dashboard by defining a json file like the one below.
+
+dashboard.jsonnet
+```jsonnet
+local errorBudgetCounter(x, y, def_id, title) = {
+  type: 'value',
+  title: title,
+  layout: {
+    x: x,
+    y: y,
+    width: 10,
+    height: 5,
+  },
+  metric: {
+    type: 'service',
+    name: 'shimesaba.error_budget.' + def_id,
+    serviceName: 'shimesaba',
+  },
+  graph: null,
+  range: null,
+  fractionSize: 0,
+  suffix: 'min',
+};
+{
+  title: 'SLI/SLO',
+  urlPath: '4oequPJEwwd',
+  memo: '',
+  widgets: [
+    errorBudgetCounter(0, 0, 'availability', ''),
+    errorBudgetCounter(10, 0, 'latency', ''),
+    {
+      type: 'markdown',
+      title: 'SLO Definitions',
+      layout: {
+        x: 20,
+        y: 0,
+        width: 5,
+        height: 20,
+      },
+      markdown: '{{file `definitions.md` | json_escape }}',
+    },
+  ],
+}
+```
+
+definitions.md
+```markdown
+{{ range $def_id, $def := .Definitions }}
+## SLO {{ $def_id }}
+
+- TimeFrame      : {{ $def.TimeFrame }}
+- ErrorBudgetSize: {{ $def.ErrorBudgetSizeDuration }}  
+
+
+{{ range $def.Objectives }}
+- {{ . }}
+{{ end }}
+{{ end }}
+```
 
 ## LICENSE
 
