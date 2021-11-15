@@ -102,6 +102,9 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 			}
 			return string(bs)
 		},
+		"to_parcentage": func(a float64) float64 {
+			return a * 100.0
+		},
 	}
 	loader.Funcs(funcs)
 	var dashboard Dashboard
