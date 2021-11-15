@@ -17,11 +17,11 @@ func TestLoader(t *testing.T) {
 			expected: "hoge\n",
 		},
 		{
-			tpl:      "{{ to_parcentage `0.001` }}",
+			tpl:      "{{ to_percentage `0.001` }}",
 			expected: "0.1",
 		},
 		{
-			tpl:      "{{ to_parcentage 0.0001 }}",
+			tpl:      "{{ to_percentage 0.0001 }}",
 			expected: "0.01",
 		},
 		{

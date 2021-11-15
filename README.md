@@ -196,7 +196,7 @@ The `definitions` accepts list of SLI/SLO definition configure.
 
 For example, if id is `latency`, the following service metric will be posted.
 - `shimesaba.error_budget.latency`: Current error budget remaining number (unit:minutes)
-- `shimesaba.error_budget_percentage.latency`: Parcentage of current error budget remaining. If it exceeds 100%, the error budget is used up.
+- `shimesaba.error_budget_percentage.latency`: percentage of current error budget remaining. If it exceeds 100%, the error budget is used up.
 - `shimesaba.error_budget_consumption.latency`: Error budget newly consumed in this calculation window (unit:minutes)
 - `shimesaba.error_budget_consumption_percentage.latency`: Percentage of newly consumed error budget in this calculation window 
 - `shimesaba.failure_time.latency`: Time of SLO violation within the rolling window time frame (unit:minutes)

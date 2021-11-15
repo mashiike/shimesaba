@@ -125,7 +125,7 @@ func newLoader(pathBase string) *gc.Loader {
 			}
 			return string(bs)
 		},
-		"to_parcentage": func(a interface{}) interface{} {
+		"to_percentage": func(a interface{}) interface{} {
 			switch num := a.(type) {
 			case float32:
 				return num * 100.0
