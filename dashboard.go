@@ -54,7 +54,7 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	for _, optFn := range optFns {
 		optFn(opts)
 	}
-	dashboard, err := app.loadDashbaord()
+	dashboard, err := app.loadDashboard()
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	return app.repo.SaveDashboard(ctx, dashboard)
 }
 
-func (app *App) loadDashbaord() (*Dashboard, error) {
+func (app *App) loadDashboard() (*Dashboard, error) {
 	if app.dashboardPath == "" {
 		return nil, errors.New("dashboard file path is not configured")
 	}
