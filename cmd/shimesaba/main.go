@@ -24,8 +24,9 @@ var (
 )
 
 func main() {
-	paths := strings.Split(os.Getenv("SSMWRAP_PATHS"), ",")
-	if len(paths) > 0 {
+	ssmwrapPaths := os.Getenv("SSMWRAP_PATHS")
+	paths := strings.Split(ssmwrapPaths, ",")
+	if ssmwrapPaths != "" && len(paths) > 0 {
 		ssmwrapErr = ssmwrap.Export(ssmwrap.ExportOptions{
 			Paths:   paths,
 			Retries: 3,
