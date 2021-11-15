@@ -10,11 +10,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"text/template"
 	"time"
 
 	jsonnet "github.com/google/go-jsonnet"
 	gc "github.com/kayac/go-config"
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -54,7 +56,7 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	for _, optFn := range optFns {
 		optFn(opts)
 	}
-	dashboard, err := app.loadDashbaord()
+	dashboard, err := app.loadDashboard()
 	if err != nil {
 		return err
 	}
@@ -69,11 +71,10 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	return app.repo.SaveDashboard(ctx, dashboard)
 }
 
-func (app *App) loadDashbaord() (*Dashboard, error) {
+func (app *App) loadDashboard() (*Dashboard, error) {
 	if app.dashboardPath == "" {
 		return nil, errors.New("dashboard file path is not configured")
 	}
-	loader := gc.New()
 	definitions := make(map[string]interface{}, len(app.definitions))
 	for _, def := range app.definitions {
 		objectives := make([]string, 0, len(def.objectives))
@@ -93,17 +94,8 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 		"Metric":      app.metricConfigs,
 		"Definitions": definitions,
 	}
+	loader := newLoader(app.cfgPath)
 	loader.Data = data
-	funcs := template.FuncMap{
-		"file": func(path string) string {
-			bs, err := loader.ReadWithEnv(filepath.Join(app.cfgPath, path))
-			if err != nil {
-				panic(err)
-			}
-			return string(bs)
-		},
-	}
-	loader.Funcs(funcs)
 	var dashboard Dashboard
 	switch filepath.Ext(app.dashboardPath) {
 	case ".jsonnet":
@@ -121,4 +113,58 @@ func (app *App) loadDashbaord() (*Dashboard, error) {
 		}
 	}
 	return &dashboard, nil
+}
+
+func newLoader(pathBase string) *gc.Loader {
+	loader := gc.New()
+	funcs := template.FuncMap{
+		"file": func(path string) string {
+			bs, err := loader.ReadWithEnv(filepath.Join(pathBase, path))
+			if err != nil {
+				panic(err)
+			}
+			return string(bs)
+		},
+		"to_parcentage": func(a interface{}) interface{} {
+			switch num := a.(type) {
+			case float32:
+				return num * 100.0
+			case float64:
+				return num * 100.0
+			case string:
+				value, err := strconv.ParseFloat(num, 64)
+				if err != nil {
+					panic(err)
+				}
+				return value * 100.0
+			}
+			panic("unexpected type")
+		},
+		"eval_expr": func(expr string, variables ...interface{}) interface{} {
+			e, err := evaluator.New(expr)
+			if err != nil {
+				panic(err)
+			}
+			nVar := len(variables)
+			mapVariables := make(evaluator.Variables, nVar)
+			if nVar > 0 {
+				if _, ok := variables[0].(string); ok {
+					for i := 0; i < len(variables); i += 2 {
+						mapVariables[fmt.Sprintf("%s", variables[i])] = variables[i+1]
+					}
+				} else {
+					for i := 0; i < len(variables); i++ {
+						mapVariables[fmt.Sprintf("var%d", i+1)] = variables[i]
+					}
+				}
+			}
+			ret, err := e.Eval(mapVariables)
+			if err != nil {
+				panic(err)
+			}
+			return ret
+		},
+	}
+	loader.Funcs(funcs)
+	return loader
 }

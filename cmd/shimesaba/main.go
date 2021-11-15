@@ -72,7 +72,7 @@ func main() {
 					handler := func(ctx context.Context) error {
 						return app.Run(ctx, optFns...)
 					}
-					if isLabmda() {
+					if isLambda() {
 						lambda.Start(handler)
 						return nil
 					}
@@ -100,7 +100,7 @@ func main() {
 					{
 						Name:      "init",
 						Usage:     "import an existing mackerel dashboard",
-						UsageText: "shimesaba dashboard [global options] init <dashboard_id or dashbaord_url_path>",
+						UsageText: "shimesaba dashboard [global options] init <dashboard_id or dashboard_url_path>",
 						Action: func(c *cli.Context) error {
 							if c.NArg() < 1 {
 								cli.ShowAppHelp(c)
@@ -155,7 +155,7 @@ func main() {
 		return nil
 	}
 
-	if isLabmda() {
+	if isLambda() {
 		if len(os.Args) <= 1 {
 			os.Args = append(os.Args, "run")
 		}
@@ -167,7 +167,7 @@ func main() {
 	}
 }
 
-func isLabmda() bool {
+func isLambda() bool {
 	return strings.HasPrefix(os.Getenv("AWS_EXECUTION_ENV"), "AWS_Lambda") ||
 		os.Getenv("AWS_LAMBDA_RUNTIME_API") != ""
 }
