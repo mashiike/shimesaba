@@ -36,8 +36,8 @@ type MetricConfig struct {
 	Roles               []string   `yaml:"roles,omitempty" json:"roles,omitempty"`
 	HostName            string     `yaml:"host_name,omitempty" json:"host_name,omitempty"`
 	AggregationInterval string     `yaml:"aggregation_interval,omitempty" json:"aggregation_interval,omitempty"`
-	AggregationMethod   string     `json:"aggregation_method,omitempty" yaml:"aggregation_method,omitempty"`
-
+	AggregationMethod   string     `yaml:"aggregation_method,omitempty" json:"aggregation_method,omitempty"`
+	InterpolatedValue   float64    `yaml:"interpolated_value,omitempty" json:"interpolated_value,omitempty"`
 	aggregationInterval time.Duration
 }
 

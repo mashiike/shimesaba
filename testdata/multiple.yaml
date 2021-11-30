@@ -8,6 +8,7 @@ metrics:
     host_name: dummy-alb
     aggregation_interval: 1m
     aggregation_method: max
+    interpolated_value: 3
   - id: component_response_time
     name: component.dummy.response_time
     type: service
