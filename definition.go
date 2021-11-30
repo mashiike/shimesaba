@@ -25,8 +25,8 @@ type Definition struct {
 //NewDefinition creates Definition from DefinitionConfig
 func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	objectives := make([]evaluator.Comparator, 0, len(cfg.Objectives))
-	for _, ocfg := range cfg.Objectives {
-		objectives = append(objectives, ocfg.GetComparator())
+	for _, objCfg := range cfg.Objectives {
+		objectives = append(objectives, objCfg.GetComparator())
 	}
 	return &Definition{
 		id:              cfg.ID,
@@ -43,8 +43,8 @@ func (d *Definition) ID() string {
 	return d.id
 }
 
-// CreateRepoorts returns Report with Metrics
-func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Report, error) {
+// CreateReports returns Report with Metrics
+func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Report, error) {
 	upFlag := make(map[time.Time]bool)
 	for _, o := range d.objectives {
 		select {
@@ -73,8 +73,8 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 	reports := make([]*Report, 0)
 	for outerIter.HasNext() {
 		curAt, _ := outerIter.Next()
-		var upTime, faiureTime time.Duration
-		var deltaFaiureTime time.Duration
+		var upTime, failureTime time.Duration
+		var deltaFailureTime time.Duration
 
 		report := &Report{
 			DefinitionID:     d.id,
@@ -88,22 +88,22 @@ func (d *Definition) CreateRepoorts(ctx context.Context, metrics Metrics) ([]*Re
 		for innerIter.HasNext() {
 			t, _ := innerIter.Next()
 			if isUp, ok := upFlag[t]; ok && !isUp {
-				faiureTime += aggInterval
+				failureTime += aggInterval
 				if report.DataPoint.Sub(t) < d.calculate {
-					deltaFaiureTime += aggInterval
+					deltaFailureTime += aggInterval
 				}
 			} else {
 				upTime += aggInterval
 			}
 		}
-		if upTime+faiureTime != d.timeFrame {
-			log.Printf("[warn] definition[%s]<%s> up_time<%s> + faiure_time<%s> != time_frame<%s> maybe drop data point\n", d.id, curAt, upTime, faiureTime, d.timeFrame)
-			upTime = d.timeFrame - faiureTime
+		if upTime+failureTime != d.timeFrame {
+			log.Printf("[warn] definition[%s]<%s> up_time<%s> + failure_time<%s> != time_frame<%s> maybe drop data point\n", d.id, curAt, upTime, failureTime, d.timeFrame)
+			upTime = d.timeFrame - failureTime
 		}
 		report.UpTime = upTime
-		report.FailureTime = faiureTime
-		report.ErrorBudget = (report.ErrorBudgetSize - faiureTime).Truncate(time.Minute)
-		report.ErrorBudgetConsumption = deltaFaiureTime.Truncate(time.Minute)
+		report.FailureTime = failureTime
+		report.ErrorBudget = (report.ErrorBudgetSize - failureTime).Truncate(time.Minute)
+		report.ErrorBudgetConsumption = deltaFailureTime.Truncate(time.Minute)
 		log.Printf("[debug] %s\n", report)
 		reports = append(reports, report)
 	}
@@ -126,7 +126,7 @@ type Report struct {
 
 // String implements fmt.Stringer
 func (r *Report) String() string {
-	return fmt.Sprintf("definition[%s][%s]<%s~%s> up_time=%s faiure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.DataPoint, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
+	return fmt.Sprintf("definition[%s][%s]<%s~%s> up_time=%s failure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.DataPoint, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
 }
 
 // ErrorBudgetUsageRate returns (1.0 - ErrorBudget/ErrorBudgetSize)

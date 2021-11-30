@@ -107,7 +107,7 @@ func TestDefinition(t *testing.T) {
 			}()
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateRepoorts(context.Background(), metrics)
+			actual, err := def.CreateReports(context.Background(), metrics)
 			require.NoError(t, err)
 			t.Log("actual:")
 			for _, a := range actual {

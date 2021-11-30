@@ -38,15 +38,15 @@ func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 
 	definitions := make([]*Definition, 0, len(cfg.Definitions))
 	var maxTimeFrame, maxCalculate time.Duration
-	for _, dcfg := range cfg.Definitions {
-		if dcfg.DurationCalculate() > maxCalculate {
-			maxCalculate = dcfg.DurationCalculate()
+	for _, defCfg := range cfg.Definitions {
+		if defCfg.DurationCalculate() > maxCalculate {
+			maxCalculate = defCfg.DurationCalculate()
 		}
-		if dcfg.DurationTimeFrame() > maxTimeFrame {
-			maxTimeFrame = dcfg.DurationTimeFrame()
+		if defCfg.DurationTimeFrame() > maxTimeFrame {
+			maxTimeFrame = defCfg.DurationTimeFrame()
 		}
 
-		d, err := NewDefinition(dcfg)
+		d, err := NewDefinition(defCfg)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +90,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	log.Println("[info] fetched metrics", metrics)
 	for _, d := range app.definitions {
 		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateRepoorts(ctx, metrics)
+		reports, err := d.CreateReports(ctx, metrics)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}
@@ -119,6 +119,6 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 		}
 	}
 	runTime := flextime.Now().Sub(now)
-	log.Printf("[info] run successed. run time:%s\n", runTime)
+	log.Printf("[info] run successes. run time:%s\n", runTime)
 	return nil
 }
