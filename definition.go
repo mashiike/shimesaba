@@ -186,19 +186,16 @@ func MetricsComparate(c evaluator.Comparator, metrics Metrics, startAt, endAt ti
 			variables[t] = variable
 		}
 	}
-	n := len(metrics)
 	ret := make(map[time.Time]bool, len(variables))
 	for t, v := range variables {
-		if len(v) == n {
-			b, err := c.Compare(v)
-			if evaluator.IsDivideByZero(err) {
-				continue
-			}
-			if err != nil {
-				return nil, err
-			}
-			ret[t] = b
+		b, err := c.Compare(v)
+		if evaluator.IsDivideByZero(err) {
+			continue
 		}
+		if err != nil {
+			return nil, err
+		}
+		ret[t] = b
 	}
 	return ret, nil
 }
