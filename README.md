@@ -36,7 +36,7 @@ $ shimesaba -config config.yaml -mackerel-apikey <Mackerel API Key> run
 
 ```console
 NAME:
-   shimesaba - A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.
+   shimesaba - A command line tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.
 
 USAGE:
    shimesaba [global options] command [command options] [arguments...]
@@ -137,7 +137,7 @@ dashboard: dashboard.jsonnet
 
 #### required_version
 
- the `requied_version` accepts a version constraint string, which specifies which versions of shimesaba can be used with your configuration.
+ the `required_version` accepts a version constraint string, which specifies which versions of shimesaba can be used with your configuration.
 
 #### metrics
 
@@ -148,23 +148,23 @@ Each setting item in the list is as follows
 
 ##### id 
 
-Requied.  
+Required.  
 An identifier to refer to in `definitions`.
 Must be unique in the list
 
 ##### name 
 
-Requied.  
+Required.  
 Metric identifier on Mackerel
 
 ##### type 
 
-Requied.  
+Required.  
 The type of metric. Host metric must set `host` and service metric must set` service`.
 
 ##### service_name
 
-Requied.  
+Required.  
 Specify the name of the service to which the metric belongs
 
 ##### roles
@@ -189,6 +189,12 @@ For example, if you calculate SLI using a metric with an aggregation interval of
 Optional, default=max
 How to aggregate metrics. There are `max`,` total`, `avg`.
 
+##### interpolated_value
+
+Optional
+Specifies the value to interpolate if the data point is missing.
+If not specified, it will be treated as nil in the expression.
+
 #### definitions
 
 The `definitions` accepts list of SLI/SLO definition configure.   
@@ -206,42 +212,42 @@ Each setting item in the list is as follows
 
 ##### id 
 
-Requied.  
+Required.  
 The identifier of `definition`. Based on this identifier, the service metric masterpiece at the time of posting is determined.  
 Must be unique in the list.
 
 ##### service_name
 
-Requied.  
+Required.  
 The service to which the service metric is posted
 
 ##### time_frame
 
-Requied. 
+Required. 
 The size of the time frame of the rolling window.  
 For example, if you specify 40320 minutes, the error budget will be calculated for the SLI for the last 4 weeks.  
 
 ##### calculate_interval
 
-Requied.  
+Required.  
 
 The shift width of the rolling window. Service metrics are posted to Mackerel at individually specified time intervals.  
 This width is recommended to be shorter than 1440 minutes (1 day) because Mackerel ignores postings of time stamp metrics before 24 hours *1.  
 
 *1 [https://mackerel.io/ja/api-docs/entry/service-metrics#post](https://mackerel.io/ja/api-docs/entry/service-metrics#post)
 
-We recommend running sihmesaba every hour with `calculate_interval` set to 60 minutes (1 hour).
+We recommend running shimesaba every hour with `calculate_interval` set to 60 minutes (1 hour).
 
 ##### error_budget_size:
 
-Requied.  
+Required.  
 Setting how much error budget should be taken with respect to the width of the time frame of the rolling window.
 For example, if `time_frame` is 40320 and you specify 0.001 (0.1%), the size of the error budget will be 40 minutes.
 This means that we will tolerate SLO violations of up to 40 minutes in the last 4 weeks.
 
 ##### objectives
 
-Requied.  
+Required.  
 A list of specific SLO definitions.
 This is a list of expr.
 `expr` defines a Go syntax comparison expression.

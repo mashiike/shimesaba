@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-version v1.3.0
 	github.com/kayac/go-config v0.6.0
 	github.com/mackerelio/mackerel-client-go v0.20.0
-	github.com/mashiike/evaluator v0.2.0
+	github.com/mashiike/evaluator v0.3.0
 	github.com/shogo82148/go-retry v1.1.1
 	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0

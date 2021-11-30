@@ -35,6 +35,23 @@ func TestDefinition(t *testing.T) {
 			},
 			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
 		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "request_count",
+				AggregationInterval: "1m",
+				AggregationMethod:   "sum",
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/request_count.csv"),
+		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "error_count",
+				AggregationInterval: "1m",
+				AggregationMethod:   "sum",
+				InterpolatedValue:   Float64(0.0),
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/error_count.csv"),
+		},
 	}
 	metrics := make(shimesaba.Metrics)
 	for _, cfg := range metricsConfigs {
@@ -96,6 +113,54 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			defCfg: &shimesaba.DefinitionConfig{
+				ID:                "error_rate",
+				TimeFrame:         "10m",
+				CalculateInterval: "5m",
+				ErrorBudgetSize:   0.3,
+				Objectives: []*shimesaba.ObjectiveConfig{
+					{
+						Expr: "rate(error_count, request_count) <= 0.5",
+					},
+				},
+			},
+			expected: []*shimesaba.Report{
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
+					UpTime:                 10 * time.Minute,
+					FailureTime:            0 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            3 * time.Minute,
+					ErrorBudgetConsumption: 0,
+				},
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
+					UpTime:                 10 * time.Minute,
+					FailureTime:            0 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            3 * time.Minute,
+					ErrorBudgetConsumption: 0 * time.Minute,
+				},
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
+					UpTime:                 9 * time.Minute,
+					FailureTime:            1 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            2 * time.Minute,
+					ErrorBudgetConsumption: 1 * time.Minute,
+				},
+			},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.defCfg.ID, func(t *testing.T) {
@@ -107,14 +172,14 @@ func TestDefinition(t *testing.T) {
 			}()
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateRepoorts(context.Background(), metrics)
+			actual, err := def.CreateReports(context.Background(), metrics)
 			require.NoError(t, err)
 			t.Log("actual:")
 			for _, a := range actual {
 				bs, _ := json.MarshalIndent(a, "", "  ")
 				t.Log(string(bs))
 			}
-			t.Log("excepted:")
+			t.Log("expected:")
 			for _, e := range c.expected {
 				bs, _ := json.MarshalIndent(e, "", "  ")
 				t.Log(string(bs))
@@ -130,7 +195,7 @@ func TestReport(t *testing.T) {
 		casename                           string
 		report                             *shimesaba.Report
 		expectedErrorBudgetUsageRate       float64
-		exceptedErrorBudgetConsumptionRate float64
+		expectedErrorBudgetConsumptionRate float64
 	}{
 		{
 			casename: "size=100min,budget=99min",
@@ -140,7 +205,7 @@ func TestReport(t *testing.T) {
 				ErrorBudgetConsumption: time.Minute,
 			},
 			expectedErrorBudgetUsageRate:       0.01,
-			exceptedErrorBudgetConsumptionRate: 0.01,
+			expectedErrorBudgetConsumptionRate: 0.01,
 		},
 		{
 			casename: "size=100min,budget=-3min",
@@ -150,7 +215,7 @@ func TestReport(t *testing.T) {
 				ErrorBudgetConsumption: 99 * time.Minute,
 			},
 			expectedErrorBudgetUsageRate:       1.03,
-			exceptedErrorBudgetConsumptionRate: 0.99,
+			expectedErrorBudgetConsumptionRate: 0.99,
 		},
 	}
 	epsilon := 0.00001
@@ -169,7 +234,7 @@ func TestReport(t *testing.T) {
 			t.Log(consumptionRate)
 			require.InEpsilon(
 				t,
-				c.exceptedErrorBudgetConsumptionRate,
+				c.expectedErrorBudgetConsumptionRate,
 				consumptionRate,
 				epsilon,
 				"consumption rate",
@@ -244,8 +309,7 @@ func TestMetricComparate(t *testing.T) {
 			require.NoError(t, err)
 			comparator, ok := e.AsComparator()
 			require.EqualValues(t, true, ok)
-			actual, err := shimesaba.MetricsComparate(comparator, metrics, metrics.StartAt(), metrics.EndAt())
-			require.NoError(t, err)
+			actual := shimesaba.MetricsComparate(comparator, metrics, metrics.StartAt(), metrics.EndAt())
 			require.EqualValues(t, c.expected, actual)
 		})
 	}

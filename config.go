@@ -36,8 +36,8 @@ type MetricConfig struct {
 	Roles               []string   `yaml:"roles,omitempty" json:"roles,omitempty"`
 	HostName            string     `yaml:"host_name,omitempty" json:"host_name,omitempty"`
 	AggregationInterval string     `yaml:"aggregation_interval,omitempty" json:"aggregation_interval,omitempty"`
-	AggregationMethod   string     `json:"aggregation_method,omitempty" yaml:"aggregation_method,omitempty"`
-
+	AggregationMethod   string     `yaml:"aggregation_method,omitempty" json:"aggregation_method,omitempty"`
+	InterpolatedValue   *float64   `yaml:"interpolated_value,omitempty" json:"interpolated_value,omitempty"`
 	aggregationInterval time.Duration
 }
 
@@ -166,8 +166,8 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 	for _, cfg := range tmp {
 
-		if aleadyExist, ok := (*c)[cfg.ID]; ok {
-			aleadyExist.MergeInto(cfg)
+		if alreadyExist, ok := (*c)[cfg.ID]; ok {
+			alreadyExist.MergeInto(cfg)
 		} else {
 			(*c)[cfg.ID] = cfg
 		}
@@ -279,7 +279,7 @@ type ObjectiveConfig struct {
 // Restrict restricts a configuration.
 func (c *ObjectiveConfig) Restrict() error {
 	if c.Expr == "" {
-		return errors.New("exer is required")
+		return errors.New("expr is required")
 	}
 	if err := c.buildComparator(); err != nil {
 		return err
@@ -295,7 +295,7 @@ func (c *ObjectiveConfig) buildComparator() error {
 	var ok bool
 	c.comparator, ok = e.AsComparator()
 	if !ok {
-		return errors.New("exer is not comparative")
+		return errors.New("expr is not comparative")
 	}
 	return nil
 }
@@ -334,7 +334,7 @@ func (c DefinitionConfigs) ToSlice() []*DefinitionConfig {
 	return ret
 }
 
-// MarshalYAML implements yaml.Marhaller
+// MarshalYAML implements yaml.Marshaller
 func (c DefinitionConfigs) MarshalYAML() (interface{}, error) {
 	return c.ToSlice(), nil
 }
@@ -344,7 +344,7 @@ func (c DefinitionConfigs) String() string {
 	return fmt.Sprintf("%v", c.ToSlice())
 }
 
-// MarshalYAML implements yaml.Unmarhaller
+// MarshalYAML implements yaml.Unmarshaler
 func (c *DefinitionConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	tmp := make([]*DefinitionConfig, 0, len(*c))
 	if err := unmarshal(&tmp); err != nil {
@@ -355,8 +355,8 @@ func (c *DefinitionConfigs) UnmarshalYAML(unmarshal func(interface{}) error) err
 	}
 	for _, cfg := range tmp {
 
-		if aleadyExist, ok := (*c)[cfg.ID]; ok {
-			aleadyExist.MergeInto(cfg)
+		if alreadyExist, ok := (*c)[cfg.ID]; ok {
+			alreadyExist.MergeInto(cfg)
 		} else {
 			(*c)[cfg.ID] = cfg
 		}

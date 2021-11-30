@@ -21,11 +21,11 @@ func TestAppWithMock(t *testing.T) {
 		t.Run(fmt.Sprintf("backfill=%d", backfill), func(t *testing.T) {
 			cases := []struct {
 				configFile string
-				excepted   map[string]int
+				expected   map[string]int
 			}{
 				{
 					configFile: "testdata/simple.yaml",
-					excepted: map[string]int{
+					expected: map[string]int{
 						"shimesaba.error_budget.latency":                        backfill,
 						"shimesaba.error_budget_consumption.latency":            backfill,
 						"shimesaba.error_budget_consumption_percentage.latency": backfill,
@@ -36,7 +36,7 @@ func TestAppWithMock(t *testing.T) {
 				},
 				{
 					configFile: "testdata/multiple.yaml",
-					excepted: map[string]int{
+					expected: map[string]int{
 						"shimesaba.error_budget.latency":                        backfill,
 						"shimesaba.error_budget_consumption.latency":            backfill,
 						"shimesaba.error_budget_consumption_percentage.latency": backfill,
@@ -77,7 +77,7 @@ func TestAppWithMock(t *testing.T) {
 						}
 						actual[v.Name]++
 					}
-					require.EqualValues(t, c.excepted, actual)
+					require.EqualValues(t, c.expected, actual)
 				})
 			}
 		})

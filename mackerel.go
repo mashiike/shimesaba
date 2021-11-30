@@ -30,7 +30,7 @@ type Repository struct {
 	client MackerelClient
 }
 
-// NewRepository cretates Repository
+// NewRepository creates Repository
 func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
 		client: client,
@@ -41,7 +41,7 @@ const (
 	fetchMetricMetricmit = 6 * time.Hour
 )
 
-// FetchMetric gets Metric using MatricConfig
+// FetchMetric gets Metric using MetricConfig
 func (repo *Repository) FetchMetric(ctx context.Context, cfg *MetricConfig, startAt time.Time, endAt time.Time) (*Metric, error) {
 	iter := timeutils.NewIterator(startAt, endAt, fetchMetricMetricmit)
 	m := NewMetric(cfg)
@@ -99,7 +99,7 @@ func (repo *Repository) FetchMetric(ctx context.Context, cfg *MetricConfig, star
 	return m, nil
 }
 
-// FetchMetrics gets metrics togetheri
+// FetchMetrics gets metrics togethers
 func (repo *Repository) FetchMetrics(ctx context.Context, cfgs MetricConfigs, startAt time.Time, endAt time.Time) (Metrics, error) {
 	ms := make(Metrics)
 	for _, cfg := range cfgs {
@@ -212,7 +212,7 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 	return values
 }
 
-//Dashboard is alieas of mackerel.Dashboard
+//Dashboard is alias of mackerel.Dashboard
 type Dashboard = mackerel.Dashboard
 
 var ErrDashboardNotFound = errors.New("dashboard not found")

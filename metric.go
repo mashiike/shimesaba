@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -15,19 +16,26 @@ type Metric struct {
 	values              map[time.Time][]float64
 	aggregationInterval time.Duration
 	aggregationMethod   func([]float64) float64
+	interpolatedValue   *float64
 	startAt             time.Time
 	endAt               time.Time
 }
 
-func NewMetric(cfg *MetricConfig) *Metric {
+func newMetric(id string) *Metric {
 	return &Metric{
-		id:                  cfg.ID,
-		values:              make(map[time.Time][]float64),
-		aggregationInterval: cfg.DurationAggregation(),
-		aggregationMethod:   getAggregationMethod(cfg.AggregationMethod),
-		startAt:             time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
-		endAt:               time.Unix(0, 0).In(time.UTC),
+		id:      id,
+		values:  make(map[time.Time][]float64),
+		startAt: time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
+		endAt:   time.Unix(0, 0).In(time.UTC),
 	}
+}
+
+func NewMetric(cfg *MetricConfig) *Metric {
+	metric := newMetric(cfg.ID)
+	metric.aggregationInterval = cfg.DurationAggregation()
+	metric.aggregationMethod = getAggregationMethod(cfg.AggregationMethod)
+	metric.interpolatedValue = cfg.InterpolatedValue
+	return metric
 }
 
 func getAggregationMethod(str string) func([]float64) float64 {
@@ -39,7 +47,7 @@ func getAggregationMethod(str string) func([]float64) float64 {
 		return t
 	}
 	switch str {
-	case "total":
+	case "total", "sum":
 		return totalFunc
 	case "avg":
 		return func(values []float64) float64 {
@@ -115,6 +123,9 @@ func (m *Metric) GetValue(t time.Time) (float64, bool) {
 	t = t.Truncate(m.aggregationInterval)
 	values, ok := m.values[t]
 	if !ok {
+		if m.interpolatedValue != nil {
+			return *m.interpolatedValue, true
+		}
 		return math.NaN(), false
 	}
 	return m.aggregationMethod(values), true
@@ -135,6 +146,24 @@ func (m *Metric) GetValues(startAt time.Time, endAt time.Time) map[time.Time]flo
 		}
 	}
 	return ret
+}
+
+// Reaggregation
+func (m *Metric) Reaggregation(aggregateInterval time.Duration) *Metric {
+	metric := newMetric(m.id)
+	metric.aggregationInterval = aggregateInterval
+	metric.aggregationMethod = m.aggregationMethod
+	metric.interpolatedValue = m.interpolatedValue
+
+	for t, src := range m.values {
+		reCurAt := t.Truncate(aggregateInterval)
+		dest, ok := metric.values[reCurAt]
+		if !ok {
+			dest = make([]float64, 0, len(src))
+		}
+		metric.values[reCurAt] = append(dest, src...)
+	}
+	return metric
 }
 
 // StartAt returns the start time of the metric
@@ -218,4 +247,25 @@ func (ms Metrics) AggregationInterval() time.Duration {
 		}
 	}
 	return ret
+}
+
+// GetVariables ​​gets the Variables ​​for the specified time period
+func (ms Metrics) GetVariables(startAt time.Time, endAt time.Time) map[time.Time]evaluator.Variables {
+	variables := make(map[time.Time]evaluator.Variables)
+	aggregateInterval := ms.AggregationInterval()
+	for name, metric := range ms {
+		if metric.AggregationInterval() != aggregateInterval {
+			metric = metric.Reaggregation(aggregateInterval)
+		}
+		values := metric.GetValues(startAt, endAt)
+		for t, v := range values {
+			variable, ok := variables[t]
+			if !ok {
+				variable = make(evaluator.Variables)
+			}
+			variable[name] = v
+			variables[t] = variable
+		}
+	}
+	return variables
 }
