@@ -189,6 +189,12 @@ For example, if you calculate SLI using a metric with an aggregation interval of
 Optional, default=max
 How to aggregate metrics. There are `max`,` total`, `avg`.
 
+##### interpolated_value
+
+Optional
+Specifies the value to interpolate if the data point is missing.
+If not specified, it will be treated as nil in the expression.
+
 #### definitions
 
 The `definitions` accepts list of SLI/SLO definition configure.   
