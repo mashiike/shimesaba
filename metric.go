@@ -21,16 +21,21 @@ type Metric struct {
 	endAt               time.Time
 }
 
-func NewMetric(cfg *MetricConfig) *Metric {
+func newMetric(id string) *Metric {
 	return &Metric{
-		id:                  cfg.ID,
-		values:              make(map[time.Time][]float64),
-		aggregationInterval: cfg.DurationAggregation(),
-		aggregationMethod:   getAggregationMethod(cfg.AggregationMethod),
-		startAt:             time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
-		interpolatedValue:   cfg.InterpolatedValue,
-		endAt:               time.Unix(0, 0).In(time.UTC),
+		id:      id,
+		values:  make(map[time.Time][]float64),
+		startAt: time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
+		endAt:   time.Unix(0, 0).In(time.UTC),
 	}
+}
+
+func NewMetric(cfg *MetricConfig) *Metric {
+	metric := newMetric(cfg.ID)
+	metric.aggregationInterval = cfg.DurationAggregation()
+	metric.aggregationMethod = getAggregationMethod(cfg.AggregationMethod)
+	metric.interpolatedValue = cfg.InterpolatedValue
+	return metric
 }
 
 func getAggregationMethod(str string) func([]float64) float64 {
@@ -143,6 +148,24 @@ func (m *Metric) GetValues(startAt time.Time, endAt time.Time) map[time.Time]flo
 	return ret
 }
 
+// Reaggregation
+func (m *Metric) Reaggregation(aggregateInterval time.Duration) *Metric {
+	metric := newMetric(m.id)
+	metric.aggregationInterval = aggregateInterval
+	metric.aggregationMethod = m.aggregationMethod
+	metric.interpolatedValue = m.interpolatedValue
+
+	for t, src := range m.values {
+		reCurAt := t.Truncate(aggregateInterval)
+		dest, ok := metric.values[reCurAt]
+		if !ok {
+			dest = make([]float64, 0, len(src))
+		}
+		metric.values[reCurAt] = append(dest, src...)
+	}
+	return metric
+}
+
 // StartAt returns the start time of the metric
 func (m *Metric) StartAt() time.Time {
 	return m.startAt
@@ -229,7 +252,11 @@ func (ms Metrics) AggregationInterval() time.Duration {
 // GetVariables ​​gets the Variables ​​for the specified time period
 func (ms Metrics) GetVariables(startAt time.Time, endAt time.Time) map[time.Time]evaluator.Variables {
 	variables := make(map[time.Time]evaluator.Variables)
+	aggregateInterval := ms.AggregationInterval()
 	for name, metric := range ms {
+		if metric.AggregationInterval() != aggregateInterval {
+			metric = metric.Reaggregation(aggregateInterval)
+		}
 		values := metric.GetValues(startAt, endAt)
 		for t, v := range values {
 			variable, ok := variables[t]

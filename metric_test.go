@@ -192,10 +192,10 @@ func TestMetricsGetVariables(t *testing.T) {
 		},
 	}
 	t.Log("actual:")
-	bs, _ := json.MarshalIndent(actual, "", "  ")
-	t.Log(string(bs))
+	actualJSON, _ := json.MarshalIndent(actual, "", "  ")
+	t.Log(string(actualJSON))
 	t.Log("expected:")
-	bs, _ = json.MarshalIndent(expected, "", "  ")
-	t.Log(string(bs))
-	require.EqualValues(t, expected, actual)
+	expectedJSON, _ := json.MarshalIndent(expected, "", "  ")
+	t.Log(string(expectedJSON))
+	require.JSONEq(t, string(expectedJSON), string(actualJSON))
 }
