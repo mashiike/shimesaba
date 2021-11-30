@@ -1,9 +1,11 @@
 package shimesaba_test
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba"
 	"github.com/stretchr/testify/require"
 )
@@ -137,4 +139,63 @@ func TestMetricGetValue(t *testing.T) {
 
 func Float64(f float64) *float64 {
 	return &f
+}
+
+func TestMetricsGetVariables(t *testing.T) {
+	metricsConfigs := []struct {
+		cfg          *shimesaba.MetricConfig
+		appendValues []timeValueTuple
+	}{
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "request_count",
+				AggregationInterval: "10m",
+				AggregationMethod:   "sum",
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/request_count.csv"),
+		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "error_count",
+				AggregationInterval: "1m",
+				AggregationMethod:   "sum",
+				InterpolatedValue:   Float64(0.0),
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/error_count.csv"),
+		},
+	}
+	metrics := make(shimesaba.Metrics)
+	for _, cfg := range metricsConfigs {
+		metric := shimesaba.NewMetric(cfg.cfg)
+		for _, tv := range cfg.appendValues {
+			metric.AppendValue(tv.Time, tv.Value)
+		}
+		metrics.Set(metric)
+	}
+	actual := metrics.GetVariables(metrics.StartAt(), metrics.EndAt())
+	expected := map[time.Time]evaluator.Variables{
+		time.Date(2021, 9, 30, 23, 50, 0, 0, time.UTC): {
+			"error_count":   1,
+			"request_count": 220,
+		},
+		time.Date(2021, 10, 1, 0, 0, 0, 0, time.UTC): {
+			"error_count":   2,
+			"request_count": 1530,
+		},
+		time.Date(2021, 10, 1, 0, 10, 0, 0, time.UTC): {
+			"error_count":   103,
+			"request_count": 1650,
+		},
+		time.Date(2021, 10, 1, 0, 20, 0, 0, time.UTC): {
+			"error_count":   0,
+			"request_count": 330,
+		},
+	}
+	t.Log("actual:")
+	bs, _ := json.MarshalIndent(actual, "", "  ")
+	t.Log(string(bs))
+	t.Log("expected:")
+	bs, _ = json.MarshalIndent(expected, "", "  ")
+	t.Log(string(bs))
+	require.EqualValues(t, expected, actual)
 }
