@@ -100,6 +100,22 @@ func TestMetricGetValue(t *testing.T) {
 			expectedStartAt: expectedStartAt,
 			expectedEndAt:   expectedEndAt5min,
 		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "avg_values",
+				AggregationInterval: "1m",
+				AggregationMethod:   "avg",
+				InterpolatedValue:   Float64(0.0),
+			},
+			appendValues: appendValues,
+			expected: map[time.Time]float64{
+				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC): 2.0 / 3.0,
+				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC): 0.0,
+				time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC): 33.1 / 3.0,
+			},
+			expectedStartAt: expectedStartAt,
+			expectedEndAt:   expectedEndAt,
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.cfg.ID, func(t *testing.T) {
@@ -117,4 +133,8 @@ func TestMetricGetValue(t *testing.T) {
 		})
 	}
 
+}
+
+func Float64(f float64) *float64 {
+	return &f
 }

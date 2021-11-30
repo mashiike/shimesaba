@@ -15,6 +15,7 @@ type Metric struct {
 	values              map[time.Time][]float64
 	aggregationInterval time.Duration
 	aggregationMethod   func([]float64) float64
+	interpolatedValue   *float64
 	startAt             time.Time
 	endAt               time.Time
 }
@@ -26,6 +27,7 @@ func NewMetric(cfg *MetricConfig) *Metric {
 		aggregationInterval: cfg.DurationAggregation(),
 		aggregationMethod:   getAggregationMethod(cfg.AggregationMethod),
 		startAt:             time.Date(9999, 12, 31, 59, 59, 59, 999999999, time.UTC),
+		interpolatedValue:   cfg.InterpolatedValue,
 		endAt:               time.Unix(0, 0).In(time.UTC),
 	}
 }
@@ -115,6 +117,9 @@ func (m *Metric) GetValue(t time.Time) (float64, bool) {
 	t = t.Truncate(m.aggregationInterval)
 	values, ok := m.values[t]
 	if !ok {
+		if m.interpolatedValue != nil {
+			return *m.interpolatedValue, true
+		}
 		return math.NaN(), false
 	}
 	return m.aggregationMethod(values), true
