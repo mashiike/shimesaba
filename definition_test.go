@@ -309,8 +309,7 @@ func TestMetricComparate(t *testing.T) {
 			require.NoError(t, err)
 			comparator, ok := e.AsComparator()
 			require.EqualValues(t, true, ok)
-			actual, err := shimesaba.MetricsComparate(comparator, metrics, metrics.StartAt(), metrics.EndAt())
-			require.NoError(t, err)
+			actual := shimesaba.MetricsComparate(comparator, metrics, metrics.StartAt(), metrics.EndAt())
 			require.EqualValues(t, c.expected, actual)
 		})
 	}

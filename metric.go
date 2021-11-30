@@ -6,6 +6,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -223,4 +224,21 @@ func (ms Metrics) AggregationInterval() time.Duration {
 		}
 	}
 	return ret
+}
+
+// GetVariables ​​gets the Variables ​​for the specified time period
+func (ms Metrics) GetVariables(startAt time.Time, endAt time.Time) map[time.Time]evaluator.Variables {
+	variables := make(map[time.Time]evaluator.Variables)
+	for name, metric := range ms {
+		values := metric.GetValues(startAt, endAt)
+		for t, v := range values {
+			variable, ok := variables[t]
+			if !ok {
+				variable = make(evaluator.Variables)
+			}
+			variable[name] = v
+			variables[t] = variable
+		}
+	}
+	return variables
 }

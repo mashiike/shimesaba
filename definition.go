@@ -52,10 +52,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Rep
 			return nil, ctx.Err()
 		default:
 		}
-		isUp, err := MetricsComparate(o, metrics, metrics.StartAt(), metrics.EndAt())
-		if err != nil {
-			return nil, err
-		}
+		isUp := MetricsComparate(o, metrics, metrics.StartAt(), metrics.EndAt())
 		for t, f := range isUp {
 			if u, ok := upFlag[t]; ok {
 				upFlag[t] = u && f
@@ -172,20 +169,8 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d)
 }
 
-func MetricsComparate(c evaluator.Comparator, metrics Metrics, startAt, endAt time.Time) (map[time.Time]bool, error) {
-
-	variables := make(map[time.Time]evaluator.Variables)
-	for name, metric := range metrics {
-		values := metric.GetValues(startAt, endAt)
-		for t, v := range values {
-			variable, ok := variables[t]
-			if !ok {
-				variable = make(evaluator.Variables)
-			}
-			variable[name] = v
-			variables[t] = variable
-		}
-	}
+func MetricsComparate(c evaluator.Comparator, metrics Metrics, startAt, endAt time.Time) map[time.Time]bool {
+	variables := metrics.GetVariables(startAt, endAt)
 	ret := make(map[time.Time]bool, len(variables))
 	for t, v := range variables {
 		b, err := c.Compare(v)
@@ -193,9 +178,10 @@ func MetricsComparate(c evaluator.Comparator, metrics Metrics, startAt, endAt ti
 			continue
 		}
 		if err != nil {
-			return nil, err
+			log.Printf("[warn] compare failed expr=%s time=%s reason=%s", c.String(), t, err)
+			continue
 		}
 		ret[t] = b
 	}
-	return ret, nil
+	return ret
 }
