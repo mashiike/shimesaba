@@ -179,7 +179,7 @@ func TestDefinition(t *testing.T) {
 				bs, _ := json.MarshalIndent(a, "", "  ")
 				t.Log(string(bs))
 			}
-			t.Log("excepted:")
+			t.Log("expected:")
 			for _, e := range c.expected {
 				bs, _ := json.MarshalIndent(e, "", "  ")
 				t.Log(string(bs))
@@ -195,7 +195,7 @@ func TestReport(t *testing.T) {
 		casename                           string
 		report                             *shimesaba.Report
 		expectedErrorBudgetUsageRate       float64
-		exceptedErrorBudgetConsumptionRate float64
+		expectedErrorBudgetConsumptionRate float64
 	}{
 		{
 			casename: "size=100min,budget=99min",
@@ -205,7 +205,7 @@ func TestReport(t *testing.T) {
 				ErrorBudgetConsumption: time.Minute,
 			},
 			expectedErrorBudgetUsageRate:       0.01,
-			exceptedErrorBudgetConsumptionRate: 0.01,
+			expectedErrorBudgetConsumptionRate: 0.01,
 		},
 		{
 			casename: "size=100min,budget=-3min",
@@ -215,7 +215,7 @@ func TestReport(t *testing.T) {
 				ErrorBudgetConsumption: 99 * time.Minute,
 			},
 			expectedErrorBudgetUsageRate:       1.03,
-			exceptedErrorBudgetConsumptionRate: 0.99,
+			expectedErrorBudgetConsumptionRate: 0.99,
 		},
 	}
 	epsilon := 0.00001
@@ -234,7 +234,7 @@ func TestReport(t *testing.T) {
 			t.Log(consumptionRate)
 			require.InEpsilon(
 				t,
-				c.exceptedErrorBudgetConsumptionRate,
+				c.expectedErrorBudgetConsumptionRate,
 				consumptionRate,
 				epsilon,
 				"consumption rate",
