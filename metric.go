@@ -41,7 +41,7 @@ func getAggregationMethod(str string) func([]float64) float64 {
 		return t
 	}
 	switch str {
-	case "total":
+	case "total", "sum":
 		return totalFunc
 	case "avg":
 		return func(values []float64) float64 {

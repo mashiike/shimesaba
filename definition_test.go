@@ -35,6 +35,23 @@ func TestDefinition(t *testing.T) {
 			},
 			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
 		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "request_count",
+				AggregationInterval: "1m",
+				AggregationMethod:   "sum",
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/request_count.csv"),
+		},
+		{
+			cfg: &shimesaba.MetricConfig{
+				ID:                  "error_count",
+				AggregationInterval: "1m",
+				AggregationMethod:   "sum",
+				InterpolatedValue:   Float64(0.0),
+			},
+			appendValues: loadTupleFromCSV(t, "testdata/error_count.csv"),
+		},
 	}
 	metrics := make(shimesaba.Metrics)
 	for _, cfg := range metricsConfigs {
@@ -92,6 +109,54 @@ func TestDefinition(t *testing.T) {
 					FailureTime:            5 * time.Minute,
 					ErrorBudgetSize:        3 * time.Minute,
 					ErrorBudget:            -2 * time.Minute,
+					ErrorBudgetConsumption: 1 * time.Minute,
+				},
+			},
+		},
+		{
+			defCfg: &shimesaba.DefinitionConfig{
+				ID:                "error_rate",
+				TimeFrame:         "10m",
+				CalculateInterval: "5m",
+				ErrorBudgetSize:   0.3,
+				Objectives: []*shimesaba.ObjectiveConfig{
+					{
+						Expr: "rate(error_count, request_count) <= 0.5",
+					},
+				},
+			},
+			expected: []*shimesaba.Report{
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
+					UpTime:                 10 * time.Minute,
+					FailureTime:            0 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            3 * time.Minute,
+					ErrorBudgetConsumption: 0,
+				},
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
+					UpTime:                 10 * time.Minute,
+					FailureTime:            0 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            3 * time.Minute,
+					ErrorBudgetConsumption: 0 * time.Minute,
+				},
+				{
+					DefinitionID:           "error_rate",
+					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
+					UpTime:                 9 * time.Minute,
+					FailureTime:            1 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            2 * time.Minute,
 					ErrorBudgetConsumption: 1 * time.Minute,
 				},
 			},
