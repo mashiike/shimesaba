@@ -71,7 +71,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Rep
 		var upTime, failureTime time.Duration
 		var deltaFailureTime time.Duration
 
-		report := newReport(d.id, d.serviceName, curAt, d.timeFrame, d.errorBudgetSize)
+		report := NewReport(d.id, d.serviceName, curAt, d.timeFrame, d.errorBudgetSize)
 		innerIter := timeutils.NewIterator(report.TimeFrameStartAt, report.TimeFrameEndAt, aggInterval)
 		for innerIter.HasNext() {
 			t, _ := innerIter.Next()

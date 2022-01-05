@@ -20,7 +20,7 @@ type Report struct {
 	ErrorBudgetConsumption time.Duration
 }
 
-func newReport(definitionID string, serviceName string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
+func NewReport(definitionID string, serviceName string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
 	report := &Report{
 		DefinitionID:     definitionID,
 		ServiceName:      serviceName,
