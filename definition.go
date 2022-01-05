@@ -71,14 +71,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Rep
 		var upTime, failureTime time.Duration
 		var deltaFailureTime time.Duration
 
-		report := &Report{
-			DefinitionID:     d.id,
-			ServiceName:      d.serviceName,
-			DataPoint:        curAt,
-			TimeFrameStartAt: curAt.Add(-d.timeFrame),
-			TimeFrameEndAt:   curAt.Add(-time.Nanosecond),
-			ErrorBudgetSize:  time.Duration(d.errorBudgetSize * float64(d.timeFrame)).Truncate(time.Minute),
-		}
+		report := newReport(d.id, d.serviceName, curAt, d.timeFrame, d.errorBudgetSize)
 		innerIter := timeutils.NewIterator(report.TimeFrameStartAt, report.TimeFrameEndAt, aggInterval)
 		for innerIter.HasNext() {
 			t, _ := innerIter.Next()
@@ -95,10 +88,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Rep
 			log.Printf("[warn] definition[%s]<%s> up_time<%s> + failure_time<%s> != time_frame<%s> maybe drop data point\n", d.id, curAt, upTime, failureTime, d.timeFrame)
 			upTime = d.timeFrame - failureTime
 		}
-		report.UpTime = upTime
-		report.FailureTime = failureTime
-		report.ErrorBudget = (report.ErrorBudgetSize - failureTime).Truncate(time.Minute)
-		report.ErrorBudgetConsumption = deltaFailureTime.Truncate(time.Minute)
+		report.SetTime(upTime, failureTime, deltaFailureTime)
 		log.Printf("[debug] %s\n", report)
 		reports = append(reports, report)
 	}

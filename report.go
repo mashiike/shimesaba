@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Report has SLI/ SLO/ErrorBudget numbers in one rolling window
+// Report has SLI/SLO/ErrorBudget numbers in one rolling window
 type Report struct {
 	DefinitionID           string
 	ServiceName            string
@@ -18,6 +18,25 @@ type Report struct {
 	ErrorBudgetSize        time.Duration
 	ErrorBudget            time.Duration
 	ErrorBudgetConsumption time.Duration
+}
+
+func newReport(definitionID string, serviceName string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
+	report := &Report{
+		DefinitionID:     definitionID,
+		ServiceName:      serviceName,
+		DataPoint:        cursorAt,
+		TimeFrameStartAt: cursorAt.Add(-timeFrame),
+		TimeFrameEndAt:   cursorAt.Add(-time.Nanosecond),
+		ErrorBudgetSize:  time.Duration(errorBudgetSize * float64(timeFrame)).Truncate(time.Minute),
+	}
+	return report
+}
+
+func (r *Report) SetTime(upTime time.Duration, failureTime time.Duration, deltaFailureTime time.Duration) {
+	r.UpTime = upTime
+	r.FailureTime = failureTime
+	r.ErrorBudget = (r.ErrorBudgetSize - failureTime).Truncate(time.Minute)
+	r.ErrorBudgetConsumption = deltaFailureTime.Truncate(time.Minute)
 }
 
 // String implements fmt.Stringer
