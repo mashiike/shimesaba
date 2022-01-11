@@ -23,6 +23,9 @@ type MackerelClient interface {
 	FindDashboard(dashboardID string) (*mackerel.Dashboard, error)
 	CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error)
 	UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error)
+
+	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
+	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
 }
 
 // Repository handles reading and writing data
@@ -273,4 +276,48 @@ func (repo *Repository) SaveDashboard(ctx context.Context, dashboard *Dashboard)
 	}
 	return err
 
+}
+
+// FetchAlerts retrieves alerts for a specified period of time
+func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error) {
+	alerts := make(Alerts, 0, 100)
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
+	resp, err := repo.client.FindWithClosedAlerts()
+	if err != nil {
+		return nil, err
+	}
+	alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
+	for startAt.Before(alerts[len(alerts)-1].OpenedAt) && resp.NextID != "" {
+		log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", resp.NextID)
+		resp, err = repo.client.FindWithClosedAlertsByNextID(resp.NextID)
+		if err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
+	}
+	return alerts, nil
+}
+
+func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) []*Alert {
+	alerts := make([]*Alert, 0, len(resp.Alerts))
+	for _, alert := range resp.Alerts {
+		if alert.MonitorID == "" {
+			continue
+		}
+		openedAt := time.Unix(alert.OpenedAt, 0)
+		if openedAt.After(endAt) {
+			continue
+		}
+		var closedAt *time.Time
+		if alert.Status == "OK" {
+			tmpClosedAt := time.Unix(alert.ClosedAt, 0)
+			closedAt = &tmpClosedAt
+		}
+		alerts = append(alerts, &Alert{
+			MonitorID: alert.MonitorID,
+			OpenedAt:  openedAt,
+			ClosedAt:  closedAt,
+		})
+	}
+	return alerts
 }
