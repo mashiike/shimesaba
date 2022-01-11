@@ -32,6 +32,29 @@ func NewReport(definitionID string, serviceName string, cursorAt time.Time, time
 	return report
 }
 
+func NewReports(definitionID string, serviceName string, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
+	if reliability.Len() == 0 {
+		return make([]*Report, 0)
+	}
+	n := int(timeFrame / reliability.TimeFrame())
+	numReports := reliability.Len() - n + 1
+	reports := make([]*Report, 0, numReports)
+
+	for i := 0; i < numReports; i++ {
+		report := NewReport(
+			definitionID,
+			serviceName,
+			reliability.CursorAt(i),
+			timeFrame,
+			errorBudgetSize,
+		)
+		report.SetTime(reliability.CalcTime(i, n))
+		reports = append(reports, report)
+	}
+
+	return reports
+}
+
 func (r *Report) SetTime(upTime time.Duration, failureTime time.Duration, deltaFailureTime time.Duration) {
 	r.UpTime = upTime
 	r.FailureTime = failureTime
