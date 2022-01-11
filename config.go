@@ -271,20 +271,27 @@ func (c *DefinitionConfig) DurationCalculate() time.Duration {
 
 // Objective Config is a SLO setting
 type ObjectiveConfig struct {
-	Expr string `yaml:"expr" json:"expr"`
+	Expr  string                `yaml:"expr" json:"expr"`
+	Alert *AlertObjectiveConfig `yaml:"alert" json:"alert"`
 
 	comparator evaluator.Comparator
 }
 
 // Restrict restricts a configuration.
 func (c *ObjectiveConfig) Restrict() error {
-	if c.Expr == "" {
-		return errors.New("expr is required")
+	if c.Expr == "" && c.Alert == nil {
+		return errors.New("either expr or alert is required")
 	}
-	if err := c.buildComparator(); err != nil {
-		return err
+	if c.Expr != "" && c.Alert != nil {
+		return errors.New("only one of expr or alert can be set")
 	}
-	return nil
+	if c.Expr != "" {
+		return c.buildComparator()
+	}
+	if c.Alert != nil {
+		return c.Alert.Restrict()
+	}
+	return errors.New("unexpected config")
 }
 
 func (c *ObjectiveConfig) buildComparator() error {
@@ -308,6 +315,26 @@ func (c *ObjectiveConfig) GetComparator() evaluator.Comparator {
 		}
 	}
 	return c.comparator
+}
+
+//Type returns objective type string
+func (c *ObjectiveConfig) Type() string {
+	if c.Expr != "" {
+		return "expr"
+	}
+	return "alert"
+}
+
+type AlertObjectiveConfig struct {
+	MonitorID string `json:"monitor_id" yaml:"monitor_id"`
+}
+
+// Restrict restricts a configuration.
+func (c *AlertObjectiveConfig) Restrict() error {
+	if c.MonitorID == "" {
+		return errors.New("monitor_id is required")
+	}
+	return nil
 }
 
 // DefinitionConfigs is a collection of DefinitionConfigs that corrects the uniqueness of IDs.
