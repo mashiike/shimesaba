@@ -55,7 +55,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	}
 	endAt := metrics.EndAt()
 	if tmpEndAt := alerts.EndAt(); tmpEndAt.After(endAt) {
-		endAt = endAt
+		endAt = tmpEndAt
 	}
 	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
 	startAt = startAt.Add(d.timeFrame).Truncate(d.timeFrame)
