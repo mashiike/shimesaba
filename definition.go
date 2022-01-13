@@ -2,6 +2,7 @@ package shimesaba
 
 import (
 	"context"
+	"log"
 	"sort"
 	"time"
 )
@@ -48,9 +49,21 @@ func (d *Definition) ID() string {
 
 // CreateReports returns Report with Metrics
 func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts Alerts) ([]*Report, error) {
+	startAt := metrics.StartAt()
+	if tmpStartAt := alerts.StartAt(); tmpStartAt.Before(startAt) {
+		startAt = tmpStartAt
+	}
+	endAt := metrics.EndAt()
+	if tmpEndAt := alerts.EndAt(); tmpEndAt.After(endAt) {
+		endAt = endAt
+	}
+	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
+	startAt = startAt.Add(d.timeFrame).Truncate(d.timeFrame)
+	endAt = endAt.Truncate(d.timeFrame).Add(-time.Nanosecond)
+	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	var reliabilityCollection ReliabilityCollection
 	for _, o := range d.exprObjectives {
-		rc, err := o.NewReliabilityCollection(d.calculate, metrics)
+		rc, err := o.NewReliabilityCollection(d.calculate, metrics, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +73,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 		}
 	}
 	for _, o := range d.alertObjectives {
-		rc, err := o.NewReliabilityCollection(d.calculate, alerts)
+		rc, err := o.NewReliabilityCollection(d.calculate, alerts, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}
@@ -68,6 +81,9 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 		if err != nil {
 			return nil, err
 		}
+	}
+	for _, r := range reliabilityCollection {
+		log.Printf("[debug] reliability[%s~%s] =  (%s, %s)", r.TimeFrameStartAt(), r.TimeFrameEndAt(), r.UpTime(), r.FailureTime())
 	}
 	reports := NewReports(d.id, d.serviceName, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
 	sort.Slice(reports, func(i, j int) bool {

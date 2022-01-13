@@ -15,10 +15,8 @@ func NewAlertObjective(cfg *AlertObjectiveConfig) *AlertObjective {
 	return &AlertObjective{cfg: cfg}
 }
 
-func (o AlertObjective) NewReliabilityCollection(timeFrame time.Duration, alerts Alerts) (ReliabilityCollection, error) {
+func (o AlertObjective) NewReliabilityCollection(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (ReliabilityCollection, error) {
 	isNoViolation := o.newIsNoViolation(alerts)
-	startAt := alerts.StartAt().Truncate(timeFrame).Add(timeFrame)
-	endAt := alerts.EndAt().Truncate(timeFrame).Add(-timeFrame)
 
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)

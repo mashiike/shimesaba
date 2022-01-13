@@ -16,10 +16,8 @@ func NewExprObjective(expr evaluator.Comparator) *ExprObjective {
 	return &ExprObjective{expr: expr}
 }
 
-func (o *ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics Metrics) (ReliabilityCollection, error) {
+func (o *ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (ReliabilityCollection, error) {
 	isNoViolation := o.newIsNoViolation(metrics)
-	startAt := metrics.StartAt().Truncate(timeFrame).Add(timeFrame)
-	endAt := metrics.EndAt().Truncate(timeFrame).Add(-timeFrame)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
 	reliabilitySlice := make([]*Reliability, 0)
