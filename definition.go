@@ -4,8 +4,6 @@ import (
 	"context"
 	"sort"
 	"time"
-
-	"github.com/mashiike/evaluator"
 )
 
 //Definition is SLI/SLO Definition
@@ -16,17 +14,21 @@ type Definition struct {
 	calculate       time.Duration
 	errorBudgetSize float64
 
-	exprObjectives []*ExprObjective
-	objectives     []evaluator.Comparator
+	exprObjectives  []*ExprObjective
+	alertObjectives []*AlertObjective
 }
 
 //NewDefinition creates Definition from DefinitionConfig
 func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	exprObjectives := make([]*ExprObjective, 0, len(cfg.Objectives))
-	objectives := make([]evaluator.Comparator, 0, len(cfg.Objectives))
+	alertObjectives := make([]*AlertObjective, 0, len(cfg.Objectives))
 	for _, objCfg := range cfg.Objectives {
-		exprObjectives = append(exprObjectives, NewExprObjective(objCfg.GetComparator()))
-		objectives = append(objectives, objCfg.GetComparator())
+		switch objCfg.Type() {
+		case "expr":
+			exprObjectives = append(exprObjectives, NewExprObjective(objCfg.GetComparator()))
+		case "alert":
+			alertObjectives = append(alertObjectives, NewAlertObjective(objCfg.Alert))
+		}
 	}
 	return &Definition{
 		id:              cfg.ID,
@@ -34,8 +36,8 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSize,
-		objectives:      objectives,
 		exprObjectives:  exprObjectives,
+		alertObjectives: alertObjectives,
 	}, nil
 }
 
@@ -45,10 +47,20 @@ func (d *Definition) ID() string {
 }
 
 // CreateReports returns Report with Metrics
-func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Report, error) {
+func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts Alerts) ([]*Report, error) {
 	var reliabilityCollection ReliabilityCollection
 	for _, o := range d.exprObjectives {
 		rc, err := o.NewReliabilityCollection(d.calculate, metrics)
+		if err != nil {
+			return nil, err
+		}
+		reliabilityCollection, err = reliabilityCollection.Merge(rc)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, o := range d.alertObjectives {
+		rc, err := o.NewReliabilityCollection(d.calculate, alerts)
 		if err != nil {
 			return nil, err
 		}
@@ -62,4 +74,12 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics) ([]*Rep
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})
 	return reports, nil
+}
+
+func (d *Definition) ExprObjectives() []string {
+	objectives := make([]string, 0, len(d.exprObjectives))
+	for _, obj := range d.exprObjectives {
+		objectives = append(objectives, obj.String())
+	}
+	return objectives
 }

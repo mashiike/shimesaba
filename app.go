@@ -88,9 +88,15 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 		return err
 	}
 	log.Println("[info] fetched metrics", metrics)
+	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
+	alerts, err := app.repo.FetchAlerts(ctx, startAt, now)
+	if err != nil {
+		return err
+	}
+	log.Println("[info] fetched alerts", len(alerts))
 	for _, d := range app.definitions {
 		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, metrics)
+		reports, err := d.CreateReports(ctx, metrics, alerts)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}

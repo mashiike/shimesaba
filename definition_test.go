@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Songmu/flextime"
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
 	"github.com/stretchr/testify/require"
@@ -59,6 +60,30 @@ func TestDefinition(t *testing.T) {
 			metric.AppendValue(tv.Time, tv.Value)
 		}
 		metrics.Set(metric)
+	}
+	restore := flextime.Fix(time.Date(2021, 10, 01, 0, 30, 0, 0, time.UTC))
+	defer restore()
+	alerts := shimesaba.Alerts{
+		{
+			MonitorID: "hogera",
+			OpenedAt:  time.Date(2021, 10, 1, 0, 0, 0, 0, time.UTC),
+			ClosedAt:  ptrTime(time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC)),
+		},
+		{
+			MonitorID: "fugara",
+			OpenedAt:  time.Date(2021, 10, 1, 0, 2, 0, 0, time.UTC),
+			ClosedAt:  ptrTime(time.Date(2021, 10, 1, 0, 4, 0, 0, time.UTC)),
+		},
+		{
+			MonitorID: "fugara",
+			OpenedAt:  time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC),
+			ClosedAt:  ptrTime(time.Date(2021, 10, 1, 0, 5, 0, 0, time.UTC)),
+		},
+		{
+			MonitorID: "hogera",
+			OpenedAt:  time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
+			ClosedAt:  nil,
+		},
 	}
 	cases := []struct {
 		defCfg   *shimesaba.DefinitionConfig
@@ -171,7 +196,7 @@ func TestDefinition(t *testing.T) {
 			}()
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateReports(context.Background(), metrics)
+			actual, err := def.CreateReports(context.Background(), metrics, alerts)
 			require.NoError(t, err)
 			t.Log("actual:")
 			for _, a := range actual {

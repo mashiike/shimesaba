@@ -77,17 +77,14 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 	}
 	definitions := make(map[string]interface{}, len(app.definitions))
 	for _, def := range app.definitions {
-		objectives := make([]string, 0, len(def.objectives))
-		for _, obj := range def.objectives {
-			objectives = append(objectives, obj.String())
-		}
+		exprObjectives := def.ExprObjectives()
 		definitions[def.id] = map[string]interface{}{
 			"TimeFrame":               timeutils.DurationString(def.timeFrame),
 			"ServiceName":             def.serviceName,
 			"CalculateInterval":       timeutils.DurationString(def.calculate),
 			"ErrorBudgetSize":         def.errorBudgetSize,
 			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame)).Truncate(time.Minute)),
-			"Objectives":              objectives,
+			"Objectives":              exprObjectives,
 		}
 	}
 	data := map[string]interface{}{
