@@ -75,8 +75,12 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 	if app.dashboardPath == "" {
 		return nil, errors.New("dashboard file path is not configured")
 	}
-	definitions := make(map[string]interface{}, len(app.definitions))
-	for _, def := range app.definitions {
+	definitions := make(map[string]interface{}, len(app.definitionConfigs))
+	for _, defCfg := range app.definitionConfigs {
+		def, err := NewDefinition(defCfg)
+		if err != nil {
+			return nil, err
+		}
 		exprObjectives := def.ExprObjectives()
 		definitions[def.id] = map[string]interface{}{
 			"TimeFrame":               timeutils.DurationString(def.timeFrame),

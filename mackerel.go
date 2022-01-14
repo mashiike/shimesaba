@@ -7,6 +7,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 	retry "github.com/shogo82148/go-retry"
@@ -287,13 +288,20 @@ func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endA
 		return nil, err
 	}
 	alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
-	for startAt.Before(alerts[len(alerts)-1].OpenedAt) && resp.NextID != "" {
+	currentAt := flextime.Now()
+	if len(alerts) != 0 {
+		currentAt = alerts[len(alerts)-1].OpenedAt
+	}
+	for startAt.Before(currentAt) && resp.NextID != "" {
 		log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", resp.NextID)
 		resp, err = repo.client.FindWithClosedAlertsByNextID(resp.NextID)
 		if err != nil {
 			return nil, err
 		}
 		alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
+		if len(alerts) != 0 {
+			currentAt = alerts[len(alerts)-1].OpenedAt
+		}
 	}
 	return alerts, nil
 }

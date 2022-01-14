@@ -155,3 +155,17 @@ func (m *mockMackerelClient) PostServiceMetricValues(serviceName string, metricV
 	m.posted = append(m.posted, metricValues...)
 	return nil
 }
+
+func (m *mockMackerelClient) FindWithClosedAlerts() (*mackerel.AlertsResp, error) {
+	return &mackerel.AlertsResp{
+		Alerts: make([]*mackerel.Alert, 0),
+		NextID: "dummyNextID",
+	}, nil
+}
+func (m *mockMackerelClient) FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error) {
+	require.Equal(m.t, "dummyNextID", nextID)
+	return &mackerel.AlertsResp{
+		Alerts: make([]*mackerel.Alert, 0),
+		NextID: "",
+	}, nil
+}

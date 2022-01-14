@@ -8,7 +8,6 @@ import (
 	"log"
 	"path/filepath"
 	"sort"
-	"time"
 
 	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
@@ -18,11 +17,9 @@ import (
 type App struct {
 	repo Repository
 
-	metricConfigs MetricConfigs
-	definitions   []*Definition
+	metricConfigs     MetricConfigs
+	definitionConfigs DefinitionConfigs
 
-	maxTimeFrame  time.Duration
-	maxCalculate  time.Duration
 	cfgPath       string
 	dashboardPath string
 }
@@ -35,31 +32,12 @@ func New(apikey string, cfg *Config) (*App, error) {
 
 //NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
-
-	definitions := make([]*Definition, 0, len(cfg.Definitions))
-	var maxTimeFrame, maxCalculate time.Duration
-	for _, defCfg := range cfg.Definitions {
-		if defCfg.DurationCalculate() > maxCalculate {
-			maxCalculate = defCfg.DurationCalculate()
-		}
-		if defCfg.DurationTimeFrame() > maxTimeFrame {
-			maxTimeFrame = defCfg.DurationTimeFrame()
-		}
-
-		d, err := NewDefinition(defCfg)
-		if err != nil {
-			return nil, err
-		}
-		definitions = append(definitions, d)
-	}
 	app := &App{
-		repo:          *NewRepository(client),
-		metricConfigs: cfg.Metrics,
-		definitions:   definitions,
-		maxTimeFrame:  maxTimeFrame,
-		maxCalculate:  maxCalculate,
-		cfgPath:       cfg.configFilePath,
-		dashboardPath: filepath.Join(cfg.configFilePath, cfg.Dashboard),
+		repo:              *NewRepository(client),
+		metricConfigs:     cfg.Metrics,
+		definitionConfigs: cfg.Definitions,
+		cfgPath:           cfg.configFilePath,
+		dashboardPath:     filepath.Join(cfg.configFilePath, cfg.Dashboard),
 	}
 	return app, nil
 }
@@ -79,9 +57,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	}
 	log.Println("[debug]", app.metricConfigs)
 	now := flextime.Now()
-	startAt := now.Truncate(app.maxCalculate).
-		Add(-(time.Duration(opts.backfill))*app.maxCalculate - app.maxTimeFrame).
-		Truncate(app.maxCalculate)
+	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
 	metrics, err := app.repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
 	if err != nil {
@@ -94,9 +70,16 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 		return err
 	}
 	log.Println("[info] fetched alerts", len(alerts))
-	for _, d := range app.definitions {
+	for _, defCfg := range app.definitionConfigs {
+		d, err := NewDefinition(defCfg)
+		if err != nil {
+			return err
+		}
 		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, metrics, alerts)
+		reports, err := d.CreateReports(ctx, metrics, alerts,
+			defCfg.StartAt(now, opts.backfill),
+			now,
+		)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}

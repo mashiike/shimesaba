@@ -48,19 +48,12 @@ func (d *Definition) ID() string {
 }
 
 // CreateReports returns Report with Metrics
-func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts Alerts) ([]*Report, error) {
-	startAt := metrics.StartAt()
-	if tmpStartAt := alerts.StartAt(); tmpStartAt.Before(startAt) {
-		startAt = tmpStartAt
-	}
-	endAt := metrics.EndAt()
-	if tmpEndAt := alerts.EndAt(); tmpEndAt.After(endAt) {
-		endAt = tmpEndAt
-	}
+func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
 	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
-	startAt = startAt.Add(d.timeFrame).Truncate(d.timeFrame)
-	endAt = endAt.Truncate(d.timeFrame).Add(-time.Nanosecond)
+	startAt = startAt.Truncate(d.calculate)
+	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
+	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.timeFrame, d.calculate)
 	var reliabilityCollection ReliabilityCollection
 	for _, o := range d.exprObjectives {
 		rc, err := o.NewReliabilityCollection(d.calculate, metrics, startAt, endAt)
@@ -89,6 +82,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	sort.Slice(reports, func(i, j int) bool {
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})
+	log.Printf("[debug] created %d reports", len(reports))
 	return reports, nil
 }
 

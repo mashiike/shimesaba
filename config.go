@@ -209,7 +209,7 @@ func (c *DefinitionConfig) Restrict() error {
 		return errors.New("service_name is required")
 	}
 	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
-		return errors.New("time_frame must between 1.0 and 0.0")
+		return errors.New("error_budget must between 1.0 and 0.0")
 	}
 	for i, objective := range c.Objectives {
 		if err := objective.Restrict(); err != nil {
@@ -267,6 +267,10 @@ func (c *DefinitionConfig) DurationCalculate() time.Duration {
 		}
 	}
 	return c.calculateInterval
+}
+
+func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
+	return now.Truncate(c.calculateInterval).Add(-(time.Duration(backfill) * c.calculateInterval) - c.timeFrame)
 }
 
 // Objective Config is a SLO setting
@@ -351,6 +355,17 @@ func (c DefinitionConfigs) Restrict() error {
 		}
 	}
 	return nil
+}
+
+func (c DefinitionConfigs) StartAt(now time.Time, backfill int) time.Time {
+	startAt := now
+	for _, cfg := range c {
+		tmp := cfg.StartAt(now, backfill)
+		if tmp.Before(startAt) {
+			startAt = tmp
+		}
+	}
+	return startAt
 }
 
 func (c DefinitionConfigs) ToSlice() []*DefinitionConfig {
