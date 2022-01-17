@@ -7,9 +7,11 @@ import (
 )
 
 type Alert struct {
-	MonitorID string
-	OpenedAt  time.Time
-	ClosedAt  *time.Time
+	MonitorID   string
+	MonitorName string
+	MonitorType string
+	OpenedAt    time.Time
+	ClosedAt    *time.Time
 }
 
 type Alerts []*Alert

@@ -1,6 +1,7 @@
 package shimesaba
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Songmu/flextime"
@@ -50,6 +51,15 @@ func (o AlertObjective) newIsNoViolation(alerts Alerts) map[time.Time]bool {
 
 func (o AlertObjective) matchAlert(alert *Alert) bool {
 	if o.cfg.MonitorID != "" && alert.MonitorID != o.cfg.MonitorID {
+		return false
+	}
+	if o.cfg.MonitorNamePrefix != "" && !strings.HasPrefix(alert.MonitorName, o.cfg.MonitorNamePrefix) {
+		return false
+	}
+	if o.cfg.MonitorNameSuffix != "" && !strings.HasSuffix(alert.MonitorName, o.cfg.MonitorNameSuffix) {
+		return false
+	}
+	if o.cfg.MonitorType != "" && !strings.EqualFold(alert.MonitorType, o.cfg.MonitorType) {
 		return false
 	}
 	return true

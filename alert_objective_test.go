@@ -15,24 +15,32 @@ func TestAlertObjective(t *testing.T) {
 	defer restore()
 	alerts := shimesaba.Alerts{
 		{
-			MonitorID: "hogera",
-			OpenedAt:  time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
-			ClosedAt:  ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
+			MonitorID:   "hogera",
+			MonitorName: "SLO hoge",
+			MonitorType: "expression",
+			OpenedAt:    time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
+			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
 		},
 		{
-			MonitorID: "fugara",
-			OpenedAt:  time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
-			ClosedAt:  ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
+			MonitorID:   "fugara",
+			MonitorName: "SLO fuga",
+			MonitorType: "service",
+			OpenedAt:    time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
+			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
 		},
 		{
-			MonitorID: "fugara",
-			OpenedAt:  time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
-			ClosedAt:  ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
+			MonitorID:   "fugara",
+			MonitorName: "SLO fuga",
+			MonitorType: "service",
+			OpenedAt:    time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
+			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 		},
 		{
-			MonitorID: "hogera",
-			OpenedAt:  time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
-			ClosedAt:  nil,
+			MonitorID:   "hogera",
+			MonitorName: "SLO hoge",
+			MonitorType: "expression",
+			OpenedAt:    time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
+			ClosedAt:    nil,
 		},
 	}
 	cases := []struct {
@@ -42,6 +50,17 @@ func TestAlertObjective(t *testing.T) {
 		{
 			cfg: &shimesaba.AlertObjectiveConfig{
 				MonitorID: "hogera",
+			},
+			expected: map[time.Time]bool{
+				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC): false,
+			},
+		},
+		{
+			cfg: &shimesaba.AlertObjectiveConfig{
+				MonitorNameSuffix: "hoge",
 			},
 			expected: map[time.Time]bool{
 				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC): false,
@@ -62,6 +81,38 @@ func TestAlertObjective(t *testing.T) {
 				time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC): false,
 				time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC): true,
 			},
+		},
+		{
+			cfg: &shimesaba.AlertObjectiveConfig{
+				MonitorNamePrefix: "SLO",
+			},
+			expected: map[time.Time]bool{
+				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC): false,
+			},
+		},
+		{
+			cfg: &shimesaba.AlertObjectiveConfig{
+				MonitorNamePrefix: "SLO",
+				MonitorType:       "Expression",
+			},
+			expected: map[time.Time]bool{
+				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC): false,
+				time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC): false,
+			},
+		},
+		{
+			cfg: &shimesaba.AlertObjectiveConfig{
+				MonitorNameSuffix: "hoge",
+				MonitorType:       "service",
+			},
+			expected: map[time.Time]bool{},
 		},
 	}
 	for i, c := range cases {

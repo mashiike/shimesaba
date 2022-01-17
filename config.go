@@ -330,15 +330,25 @@ func (c *ObjectiveConfig) Type() string {
 }
 
 type AlertObjectiveConfig struct {
-	MonitorID string `json:"monitor_id" yaml:"monitor_id"`
+	MonitorID         string `json:"monitor_id,omitempty" yaml:"monitor_id,omitempty"`
+	MonitorNamePrefix string `json:"monitor_name_prefix,omitempty" yaml:"monitor_name_prefix,omitempty"`
+	MonitorNameSuffix string `json:"monitor_name_suffix,omitempty" yaml:"monitor_name_suffix,omitempty"`
+	MonitorType       string `json:"monitor_type,omitempty" yaml:"monitor_type,omitempty"`
 }
 
 // Restrict restricts a configuration.
 func (c *AlertObjectiveConfig) Restrict() error {
-	if c.MonitorID == "" {
-		return errors.New("monitor_id is required")
+	if c.MonitorID != "" {
+		return nil
 	}
-	return nil
+	if c.MonitorNamePrefix != "" {
+		return nil
+	}
+	if c.MonitorNameSuffix != "" {
+		return nil
+	}
+
+	return errors.New("either monitor_id, monitor_name_prefix, monitor_name_suffix or monitor_type is required")
 }
 
 // DefinitionConfigs is a collection of DefinitionConfigs that corrects the uniqueness of IDs.

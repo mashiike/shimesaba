@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/Songmu/flextime"
@@ -27,17 +28,22 @@ type MackerelClient interface {
 
 	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
 	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
+	GetMonitor(monitorID string) (mackerel.Monitor, error)
 }
 
 // Repository handles reading and writing data
 type Repository struct {
 	client MackerelClient
+
+	mu          sync.Mutex
+	monitorByID map[string]mackerel.Monitor
 }
 
 // NewRepository creates Repository
 func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
-		client: client,
+		client:      client,
+		monitorByID: make(map[string]mackerel.Monitor),
 	}
 }
 
@@ -287,7 +293,11 @@ func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endA
 	if err != nil {
 		return nil, err
 	}
-	alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
+	converted, err := repo.convertAlerts(resp, endAt)
+	if err != nil {
+		return nil, err
+	}
+	alerts = append(alerts, converted...)
 	currentAt := flextime.Now()
 	if len(alerts) != 0 {
 		currentAt = alerts[len(alerts)-1].OpenedAt
@@ -298,7 +308,11 @@ func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endA
 		if err != nil {
 			return nil, err
 		}
-		alerts = append(alerts, repo.convertAlerts(resp, endAt)...)
+		converted, err := repo.convertAlerts(resp, endAt)
+		if err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, converted...)
 		if len(alerts) != 0 {
 			currentAt = alerts[len(alerts)-1].OpenedAt
 		}
@@ -306,7 +320,7 @@ func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endA
 	return alerts, nil
 }
 
-func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) []*Alert {
+func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) ([]*Alert, error) {
 	alerts := make([]*Alert, 0, len(resp.Alerts))
 	for _, alert := range resp.Alerts {
 		if alert.MonitorID == "" {
@@ -321,11 +335,33 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 			tmpClosedAt := time.Unix(alert.ClosedAt, 0)
 			closedAt = &tmpClosedAt
 		}
+		monitor, err := repo.getMonitor(alert.MonitorID)
+		if err != nil {
+			return nil, err
+		}
 		alerts = append(alerts, &Alert{
-			MonitorID: alert.MonitorID,
-			OpenedAt:  openedAt,
-			ClosedAt:  closedAt,
+			MonitorID:   alert.MonitorID,
+			MonitorName: monitor.MonitorName(),
+			MonitorType: monitor.MonitorType(),
+			OpenedAt:    openedAt,
+			ClosedAt:    closedAt,
 		})
 	}
-	return alerts
+	return alerts, nil
+}
+
+func (repo *Repository) getMonitor(id string) (mackerel.Monitor, error) {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+
+	if monitor, ok := repo.monitorByID[id]; ok {
+		return monitor, nil
+	}
+
+	monitor, err := repo.client.GetMonitor(id)
+	if err != nil {
+		return nil, err
+	}
+	repo.monitorByID[id] = monitor
+	return monitor, nil
 }
