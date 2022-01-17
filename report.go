@@ -10,6 +10,7 @@ import (
 type Report struct {
 	DefinitionID           string
 	ServiceName            string
+	MetricPrefix           string
 	DataPoint              time.Time
 	TimeFrameStartAt       time.Time
 	TimeFrameEndAt         time.Time
@@ -20,7 +21,7 @@ type Report struct {
 	ErrorBudgetConsumption time.Duration
 }
 
-func NewReport(definitionID string, serviceName string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
+func NewReport(definitionID string, serviceName string, metricPrefix string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
 	report := &Report{
 		DefinitionID:     definitionID,
 		ServiceName:      serviceName,
@@ -32,7 +33,7 @@ func NewReport(definitionID string, serviceName string, cursorAt time.Time, time
 	return report
 }
 
-func NewReports(definitionID string, serviceName string, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
+func NewReports(definitionID string, serviceName string, metricPrefix string, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
 	if reliability.Len() == 0 {
 		return make([]*Report, 0)
 	}
@@ -44,6 +45,7 @@ func NewReports(definitionID string, serviceName string, errorBudgetSize float64
 		report := NewReport(
 			definitionID,
 			serviceName,
+			metricPrefix,
 			reliability.CursorAt(i),
 			timeFrame,
 			errorBudgetSize,

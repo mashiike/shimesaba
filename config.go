@@ -180,10 +180,10 @@ type DefinitionConfig struct {
 	ID                string             `json:"id" yaml:"id"`
 	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
 	ServiceName       string             `json:"service_name" yaml:"service_name"`
+	MetricPrefix      string             `json:"metric_prefix" yaml:"metric_prefix"`
 	ErrorBudgetSize   float64            `yaml:"error_budget_size" json:"error_budget_size"`
 	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
-
 	calculateInterval time.Duration
 	timeFrame         time.Duration
 }
@@ -200,6 +200,10 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.Objectives = append(c.Objectives, o.Objectives...)
 }
 
+const (
+	defaultMetricPrefix = "shimesaba"
+)
+
 // Restrict restricts a definition configuration.
 func (c *DefinitionConfig) Restrict() error {
 	if c.ID == "" {
@@ -207,6 +211,9 @@ func (c *DefinitionConfig) Restrict() error {
 	}
 	if c.ServiceName == "" {
 		return errors.New("service_name is required")
+	}
+	if c.MetricPrefix == "" {
+		c.MetricPrefix = defaultMetricPrefix
 	}
 	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
 		return errors.New("error_budget must between 1.0 and 0.0")

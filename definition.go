@@ -11,6 +11,7 @@ import (
 type Definition struct {
 	id              string
 	serviceName     string
+	metricPrefix    string
 	timeFrame       time.Duration
 	calculate       time.Duration
 	errorBudgetSize float64
@@ -34,6 +35,7 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 	return &Definition{
 		id:              cfg.ID,
 		serviceName:     cfg.ServiceName,
+		metricPrefix:    cfg.MetricPrefix,
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSize,
@@ -80,7 +82,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	for _, r := range reliabilityCollection {
 		log.Printf("[debug] reliability[%s~%s] =  (%s, %s)", r.TimeFrameStartAt(), r.TimeFrameEndAt(), r.UpTime(), r.FailureTime())
 	}
-	reports := NewReports(d.id, d.serviceName, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
+	reports := NewReports(d.id, d.serviceName, d.metricPrefix, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
 	sort.Slice(reports, func(i, j int) bool {
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})

@@ -102,7 +102,7 @@ func TestNewReports(t *testing.T) {
 			),
 		},
 	)
-	actual := shimesaba.NewReports("test", "test", 0.05, 2*time.Hour, c)
+	actual := shimesaba.NewReports("test", "test", "test", 0.05, 2*time.Hour, c)
 	expected := []*shimesaba.Report{
 		{
 			DefinitionID:           "test",

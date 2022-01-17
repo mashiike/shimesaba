@@ -130,10 +130,6 @@ func (repo *Repository) FetchMetrics(ctx context.Context, cfgs MetricConfigs, st
 	return ms, nil
 }
 
-const (
-	mackerelMetricPrefix = "shimesaba"
-)
-
 // SaveReports posts Reports to Mackerel
 func (repo *Repository) SaveReports(ctx context.Context, reports []*Report) error {
 	services := make(map[string][]*mackerel.MetricValue)
@@ -191,32 +187,32 @@ func (repo *Repository) postServiceMetricValues(ctx context.Context, service str
 func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 	values := make([]*mackerel.MetricValue, 0, 5)
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.error_budget.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.error_budget.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.ErrorBudget.Minutes(),
 	})
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.error_budget_percentage.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.error_budget_percentage.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.ErrorBudgetUsageRate() * 100.0,
 	})
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.error_budget_consumption.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.error_budget_consumption.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.ErrorBudgetConsumption.Minutes(),
 	})
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.error_budget_consumption_percentage.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.error_budget_consumption_percentage.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.ErrorBudgetConsumptionRate() * 100.0,
 	})
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.uptime.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.uptime.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.UpTime.Minutes(),
 	})
 	values = append(values, &mackerel.MetricValue{
-		Name:  fmt.Sprintf("%s.failure_time.%s", mackerelMetricPrefix, report.DefinitionID),
+		Name:  fmt.Sprintf("%s.failure_time.%s", report.MetricPrefix, report.DefinitionID),
 		Time:  report.DataPoint.Unix(),
 		Value: report.FailureTime.Minutes(),
 	})
