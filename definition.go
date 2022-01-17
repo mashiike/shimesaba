@@ -38,7 +38,7 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 		metricPrefix:    cfg.MetricPrefix,
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
-		errorBudgetSize: cfg.ErrorBudgetSize,
+		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
 		exprObjectives:  exprObjectives,
 		alertObjectives: alertObjectives,
 	}, nil

@@ -86,9 +86,10 @@ func TestDefinition(t *testing.T) {
 		{
 			defCfg: &shimesaba.DefinitionConfig{
 				ID:                "test1",
+				ServiceName:       "test",
 				TimeFrame:         "10m",
 				CalculateInterval: "5m",
-				ErrorBudgetSize:   0.3,
+				ErrorBudgetSize:   "3m",
 				Objectives: []*shimesaba.ObjectiveConfig{
 					{
 						Expr: "dummy3 < 1.0",
@@ -98,6 +99,8 @@ func TestDefinition(t *testing.T) {
 			expected: []*shimesaba.Report{
 				{
 					DefinitionID:           "test1",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -109,6 +112,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "test1",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -120,6 +125,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "test1",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
@@ -134,6 +141,7 @@ func TestDefinition(t *testing.T) {
 		{
 			defCfg: &shimesaba.DefinitionConfig{
 				ID:                "error_rate",
+				ServiceName:       "test",
 				TimeFrame:         "10m",
 				CalculateInterval: "5m",
 				ErrorBudgetSize:   0.3,
@@ -146,6 +154,8 @@ func TestDefinition(t *testing.T) {
 			expected: []*shimesaba.Report{
 				{
 					DefinitionID:           "error_rate",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -157,6 +167,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "error_rate",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -168,6 +180,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "error_rate",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
@@ -182,6 +196,7 @@ func TestDefinition(t *testing.T) {
 		{
 			defCfg: &shimesaba.DefinitionConfig{
 				ID:                "alert_and_metric_mixing",
+				ServiceName:       "test",
 				TimeFrame:         "10m",
 				CalculateInterval: "5m",
 				ErrorBudgetSize:   0.3,
@@ -199,6 +214,8 @@ func TestDefinition(t *testing.T) {
 			expected: []*shimesaba.Report{
 				{
 					DefinitionID:           "alert_and_metric_mixing",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -210,6 +227,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "alert_and_metric_mixing",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -221,6 +240,8 @@ func TestDefinition(t *testing.T) {
 				},
 				{
 					DefinitionID:           "alert_and_metric_mixing",
+					ServiceName:            "test",
+					MetricPrefix:           "shimesaba",
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
@@ -241,6 +262,8 @@ func TestDefinition(t *testing.T) {
 				t.Log(buf.String())
 				logger.Setup(os.Stderr, "info")
 			}()
+			err := c.defCfg.Restrict()
+			require.NoError(t, err)
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
 			actual, err := def.CreateReports(context.Background(), metrics, alerts,

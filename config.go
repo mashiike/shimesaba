@@ -177,15 +177,16 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // DefinitionConfig is a setting related to SLI/SLO
 type DefinitionConfig struct {
-	ID                string             `json:"id" yaml:"id"`
-	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
-	ServiceName       string             `json:"service_name" yaml:"service_name"`
-	MetricPrefix      string             `json:"metric_prefix" yaml:"metric_prefix"`
-	ErrorBudgetSize   float64            `yaml:"error_budget_size" json:"error_budget_size"`
-	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
-	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
-	calculateInterval time.Duration
-	timeFrame         time.Duration
+	ID                        string             `json:"id" yaml:"id"`
+	TimeFrame                 string             `yaml:"time_frame" json:"time_frame"`
+	ServiceName               string             `json:"service_name" yaml:"service_name"`
+	MetricPrefix              string             `json:"metric_prefix" yaml:"metric_prefix"`
+	ErrorBudgetSize           interface{}        `yaml:"error_budget_size" json:"error_budget_size"`
+	CalculateInterval         string             `yaml:"calculate_interval" json:"calculate_interval"`
+	Objectives                []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
+	calculateInterval         time.Duration
+	timeFrame                 time.Duration
+	errorBudgetSizeParcentage float64
 }
 
 // MergeInto merges DefinitionConfig together
@@ -215,9 +216,7 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.MetricPrefix == "" {
 		c.MetricPrefix = defaultMetricPrefix
 	}
-	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
-		return errors.New("error_budget must between 1.0 and 0.0")
-	}
+
 	for i, objective := range c.Objectives {
 		if err := objective.Restrict(); err != nil {
 			return fmt.Errorf("objective[%d] %w", i, err)
@@ -249,31 +248,39 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.calculateInterval >= 24*time.Hour {
 		log.Printf("[warn] We do not recommend calculate_interval=`%s` setting. because can not post service metrics older than 24 hours to Mackerel.\n", c.CalculateInterval)
 	}
+
+	if errorBudgetSizeParcentage, ok := c.ErrorBudgetSize.(float64); ok {
+		c.errorBudgetSizeParcentage = errorBudgetSizeParcentage
+	}
+	if errorBudgetSizeDurationString, ok := c.ErrorBudgetSize.(string); ok {
+		errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeDurationString)
+		if err != nil {
+			return fmt.Errorf("error_budget can not parse as duration: %w", err)
+		}
+		if errorBudgetSizeDuration >= c.timeFrame || errorBudgetSizeDuration == 0 {
+			return fmt.Errorf("error_budget must between %s and 0m", c.timeFrame)
+		}
+		c.errorBudgetSizeParcentage = float64(errorBudgetSizeDuration) / float64(c.timeFrame)
+	}
+	if c.errorBudgetSizeParcentage >= 1.0 || c.errorBudgetSizeParcentage <= 0.0 {
+		return errors.New("error_budget must between 1.0 and 0.0")
+	}
+
 	return nil
 }
 
 // DurationTimeFrame converts TimeFrame as time.Duration
 func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
-	if c.timeFrame == 0 {
-		var err error
-		c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
-		if err != nil {
-			panic(err)
-		}
-	}
 	return c.timeFrame
 }
 
 // DurationCalculate converts CalculateInterval as time.Duration
 func (c *DefinitionConfig) DurationCalculate() time.Duration {
-	if c.calculateInterval == 0 {
-		var err error
-		c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
-		if err != nil {
-			panic(err)
-		}
-	}
 	return c.calculateInterval
+}
+
+func (c *DefinitionConfig) ErrorBudgetSizeParcentage() float64 {
+	return c.errorBudgetSizeParcentage
 }
 
 func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
