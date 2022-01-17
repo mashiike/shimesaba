@@ -10,7 +10,7 @@ import (
 //Definition is SLI/SLO Definition
 type Definition struct {
 	id              string
-	serviceName     string
+	destination     *Destination
 	timeFrame       time.Duration
 	calculate       time.Duration
 	errorBudgetSize float64
@@ -32,11 +32,15 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 		}
 	}
 	return &Definition{
-		id:              cfg.ID,
-		serviceName:     cfg.ServiceName,
+		id: cfg.ID,
+		destination: &Destination{
+			ServiceName:  cfg.ServiceName,
+			MetricPrefix: cfg.MetricPrefix,
+			MetricSuffix: cfg.MetricSuffix,
+		},
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
-		errorBudgetSize: cfg.ErrorBudgetSize,
+		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
 		exprObjectives:  exprObjectives,
 		alertObjectives: alertObjectives,
 	}, nil
@@ -80,7 +84,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	for _, r := range reliabilityCollection {
 		log.Printf("[debug] reliability[%s~%s] =  (%s, %s)", r.TimeFrameStartAt(), r.TimeFrameEndAt(), r.UpTime(), r.FailureTime())
 	}
-	reports := NewReports(d.id, d.serviceName, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
+	reports := NewReports(d.id, d.destination, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
 	sort.Slice(reports, func(i, j int) bool {
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})

@@ -9,7 +9,7 @@ import (
 // Report has SLI/SLO/ErrorBudget numbers in one rolling window
 type Report struct {
 	DefinitionID           string
-	ServiceName            string
+	Destination            *Destination
 	DataPoint              time.Time
 	TimeFrameStartAt       time.Time
 	TimeFrameEndAt         time.Time
@@ -20,10 +20,10 @@ type Report struct {
 	ErrorBudgetConsumption time.Duration
 }
 
-func NewReport(definitionID string, serviceName string, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
+func NewReport(definitionID string, destination *Destination, cursorAt time.Time, timeFrame time.Duration, errorBudgetSize float64) *Report {
 	report := &Report{
 		DefinitionID:     definitionID,
-		ServiceName:      serviceName,
+		Destination:      destination,
 		DataPoint:        cursorAt,
 		TimeFrameStartAt: cursorAt.Add(-timeFrame),
 		TimeFrameEndAt:   cursorAt.Add(-time.Nanosecond),
@@ -32,7 +32,7 @@ func NewReport(definitionID string, serviceName string, cursorAt time.Time, time
 	return report
 }
 
-func NewReports(definitionID string, serviceName string, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
+func NewReports(definitionID string, destination *Destination, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
 	if reliability.Len() == 0 {
 		return make([]*Report, 0)
 	}
@@ -43,7 +43,7 @@ func NewReports(definitionID string, serviceName string, errorBudgetSize float64
 	for i := 0; i < numReports; i++ {
 		report := NewReport(
 			definitionID,
-			serviceName,
+			destination,
 			reliability.CursorAt(i),
 			timeFrame,
 			errorBudgetSize,

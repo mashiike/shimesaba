@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +22,13 @@ type Config struct {
 
 	Metrics     MetricConfigs     `yaml:"metrics" json:"metrics"`
 	Definitions DefinitionConfigs `yaml:"definitions" json:"definitions"`
+
+	//Common definition parameter
+	TimeFrame         string      `yaml:"time_frame" json:"time_frame"`
+	ServiceName       string      `json:"service_name" yaml:"service_name"`
+	MetricPrefix      string      `json:"metric_prefix" yaml:"metric_prefix"`
+	ErrorBudgetSize   interface{} `yaml:"error_budget_size" json:"error_budget_size"`
+	CalculateInterval string      `yaml:"calculate_interval" json:"calculate_interval"`
 
 	Dashboard          string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
 	configFilePath     string
@@ -180,12 +188,15 @@ type DefinitionConfig struct {
 	ID                string             `json:"id" yaml:"id"`
 	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
 	ServiceName       string             `json:"service_name" yaml:"service_name"`
-	ErrorBudgetSize   float64            `yaml:"error_budget_size" json:"error_budget_size"`
+	MetricPrefix      string             `json:"metric_prefix" yaml:"metric_prefix"`
+	MetricSuffix      string             `json:"metric_suffix" yaml:"metric_suffix"`
+	ErrorBudgetSize   interface{}        `yaml:"error_budget_size" json:"error_budget_size"`
 	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
 
-	calculateInterval time.Duration
-	timeFrame         time.Duration
+	calculateInterval         time.Duration
+	timeFrame                 time.Duration
+	errorBudgetSizeParcentage float64
 }
 
 // MergeInto merges DefinitionConfig together
@@ -193,12 +204,17 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.ID = coalesceString(o.ID, c.ID)
 	c.TimeFrame = coalesceString(o.TimeFrame, c.TimeFrame)
 	c.CalculateInterval = coalesceString(o.CalculateInterval, c.CalculateInterval)
-	if o.ErrorBudgetSize != 0.0 {
+	c.MetricPrefix = coalesceString(o.MetricPrefix, c.MetricPrefix)
+	if o.ErrorBudgetSize != nil {
 		c.ErrorBudgetSize = o.ErrorBudgetSize
 	}
 	c.ServiceName = coalesceString(o.ServiceName, c.ServiceName)
 	c.Objectives = append(c.Objectives, o.Objectives...)
 }
+
+const (
+	defaultMetricPrefix = "shimesaba"
+)
 
 // Restrict restricts a definition configuration.
 func (c *DefinitionConfig) Restrict() error {
@@ -208,8 +224,11 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.ServiceName == "" {
 		return errors.New("service_name is required")
 	}
-	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
-		return errors.New("error_budget must between 1.0 and 0.0")
+	if c.MetricPrefix == "" {
+		c.MetricPrefix = defaultMetricPrefix
+	}
+	if c.MetricSuffix == "" {
+		c.MetricSuffix = c.ID
 	}
 	for i, objective := range c.Objectives {
 		if err := objective.Restrict(); err != nil {
@@ -242,31 +261,48 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.calculateInterval >= 24*time.Hour {
 		log.Printf("[warn] We do not recommend calculate_interval=`%s` setting. because can not post service metrics older than 24 hours to Mackerel.\n", c.CalculateInterval)
 	}
+
+	if errorBudgetSizeParcentage, ok := c.ErrorBudgetSize.(float64); ok {
+		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizeParcentage)
+		c.errorBudgetSizeParcentage = errorBudgetSizeParcentage
+	}
+	if errorBudgetSizeString, ok := c.ErrorBudgetSize.(string); ok {
+		if strings.ContainsRune(errorBudgetSizeString, '%') {
+			value, err := strconv.ParseFloat(strings.TrimRight(errorBudgetSizeString, `%`), 64)
+			if err != nil {
+				return fmt.Errorf("error_budget can not parse as percentage: %w", err)
+			}
+			c.errorBudgetSizeParcentage = value
+		} else {
+			errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeString)
+			if err != nil {
+				return fmt.Errorf("error_budget can not parse as duration: %w", err)
+			}
+			if errorBudgetSizeDuration >= c.timeFrame || errorBudgetSizeDuration == 0 {
+				return fmt.Errorf("error_budget must between %s and 0m", c.timeFrame)
+			}
+			c.errorBudgetSizeParcentage = float64(errorBudgetSizeDuration) / float64(c.timeFrame)
+		}
+	}
+	if c.errorBudgetSizeParcentage >= 1.0 || c.errorBudgetSizeParcentage <= 0.0 {
+		return errors.New("error_budget must between 1.0 and 0.0")
+	}
+
 	return nil
 }
 
 // DurationTimeFrame converts TimeFrame as time.Duration
 func (c *DefinitionConfig) DurationTimeFrame() time.Duration {
-	if c.timeFrame == 0 {
-		var err error
-		c.timeFrame, err = timeutils.ParseDuration(c.TimeFrame)
-		if err != nil {
-			panic(err)
-		}
-	}
 	return c.timeFrame
 }
 
 // DurationCalculate converts CalculateInterval as time.Duration
 func (c *DefinitionConfig) DurationCalculate() time.Duration {
-	if c.calculateInterval == 0 {
-		var err error
-		c.calculateInterval, err = timeutils.ParseDuration(c.CalculateInterval)
-		if err != nil {
-			panic(err)
-		}
-	}
 	return c.calculateInterval
+}
+
+func (c *DefinitionConfig) ErrorBudgetSizeParcentage() float64 {
+	return c.errorBudgetSizeParcentage
 }
 
 func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
@@ -439,6 +475,18 @@ func (c *Config) Restrict() error {
 	}
 	if err := c.Metrics.Restrict(); err != nil {
 		return fmt.Errorf("metrics has invalid: %w", err)
+	}
+
+	for id, cfg := range c.Definitions {
+		base := &DefinitionConfig{
+			TimeFrame:         c.TimeFrame,
+			ServiceName:       c.ServiceName,
+			MetricPrefix:      c.MetricPrefix,
+			ErrorBudgetSize:   c.ErrorBudgetSize,
+			CalculateInterval: c.CalculateInterval,
+		}
+		base.MergeInto(cfg)
+		c.Definitions[id] = base
 	}
 	if err := c.Definitions.Restrict(); err != nil {
 		return fmt.Errorf("definitions has invalid: %w", err)
