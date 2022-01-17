@@ -1,6 +1,7 @@
 package shimesaba
 
 import (
+	"log"
 	"strings"
 	"time"
 
@@ -50,6 +51,7 @@ func (o AlertObjective) newIsNoViolation(alerts Alerts) map[time.Time]bool {
 }
 
 func (o AlertObjective) matchAlert(alert *Alert) bool {
+	log.Printf("[debug] try match alert %v vs %v", o.cfg, alert)
 	if o.cfg.MonitorID != "" && alert.MonitorID != o.cfg.MonitorID {
 		return false
 	}

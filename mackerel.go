@@ -339,13 +339,20 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 		if err != nil {
 			return nil, err
 		}
-		alerts = append(alerts, &Alert{
+		alert := &Alert{
 			MonitorID:   alert.MonitorID,
 			MonitorName: monitor.MonitorName(),
 			MonitorType: monitor.MonitorType(),
 			OpenedAt:    openedAt,
 			ClosedAt:    closedAt,
-		})
+		}
+		log.Printf("[debug] alert[%s] %s %s ~ %s",
+			alert.MonitorID,
+			alert.MonitorName,
+			alert.OpenedAt,
+			alert.ClosedAt,
+		)
+		alerts = append(alerts, alert)
 	}
 	return alerts, nil
 }
@@ -357,11 +364,12 @@ func (repo *Repository) getMonitor(id string) (mackerel.Monitor, error) {
 	if monitor, ok := repo.monitorByID[id]; ok {
 		return monitor, nil
 	}
-
+	log.Printf("[debug] call GetMonitor(%s)", id)
 	monitor, err := repo.client.GetMonitor(id)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
 	repo.monitorByID[id] = monitor
 	return monitor, nil
 }

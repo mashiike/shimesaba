@@ -55,6 +55,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.timeFrame, d.calculate)
 	var reliabilityCollection ReliabilityCollection
+	log.Printf("[debug] expr objective count = %d", len(d.exprObjectives))
 	for _, o := range d.exprObjectives {
 		rc, err := o.NewReliabilityCollection(d.calculate, metrics, startAt, endAt)
 		if err != nil {
@@ -65,6 +66,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 			return nil, err
 		}
 	}
+	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
 	for _, o := range d.alertObjectives {
 		rc, err := o.NewReliabilityCollection(d.calculate, alerts, startAt, endAt)
 		if err != nil {
