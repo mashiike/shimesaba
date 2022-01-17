@@ -107,6 +107,7 @@ func TestNewReports(t *testing.T) {
 		{
 			DefinitionID:           "test",
 			ServiceName:            "test",
+			MetricPrefix:           "test",
 			DataPoint:              time.Date(2022, 1, 6, 11, 0, 0, 0, time.UTC),
 			TimeFrameStartAt:       time.Date(2022, 1, 6, 9, 0, 0, 0, time.UTC),
 			TimeFrameEndAt:         time.Date(2022, 1, 6, 11, 0, 0, 0, time.UTC).Add(-time.Nanosecond),
@@ -119,6 +120,7 @@ func TestNewReports(t *testing.T) {
 		{
 			DefinitionID:           "test",
 			ServiceName:            "test",
+			MetricPrefix:           "test",
 			DataPoint:              time.Date(2022, 1, 6, 10, 0, 0, 0, time.UTC),
 			TimeFrameStartAt:       time.Date(2022, 1, 6, 8, 0, 0, 0, time.UTC),
 			TimeFrameEndAt:         time.Date(2022, 1, 6, 10, 0, 0, 0, time.UTC).Add(-time.Nanosecond),

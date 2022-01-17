@@ -25,6 +25,7 @@ func NewReport(definitionID string, serviceName string, metricPrefix string, cur
 	report := &Report{
 		DefinitionID:     definitionID,
 		ServiceName:      serviceName,
+		MetricPrefix:     metricPrefix,
 		DataPoint:        cursorAt,
 		TimeFrameStartAt: cursorAt.Add(-timeFrame),
 		TimeFrameEndAt:   cursorAt.Add(-time.Nanosecond),
