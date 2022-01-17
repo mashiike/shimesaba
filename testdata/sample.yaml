@@ -1,0 +1,21 @@
+required_version: ">=0.0.0"
+
+service_name:  prod
+time_frame: 28d
+calculate_interval: 1h
+error_budget_size: 40m
+
+definitions:
+  - id: external_api_availability
+    metric_prefix: external
+    objectives:
+      - alert:
+          monitor_name_suffix: api.example.com
+          monitor_type: external
+  - id: internal_api_availability
+    metric_prefix: internal
+    objectives:
+      - alert:
+          monitor_name_suffix: api.example.com
+          monitor_type: external
+

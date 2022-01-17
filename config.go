@@ -22,6 +22,13 @@ type Config struct {
 	Metrics     MetricConfigs     `yaml:"metrics" json:"metrics"`
 	Definitions DefinitionConfigs `yaml:"definitions" json:"definitions"`
 
+	//Common definition parameter
+	TimeFrame         string      `yaml:"time_frame" json:"time_frame"`
+	ServiceName       string      `json:"service_name" yaml:"service_name"`
+	MetricPrefix      string      `json:"metric_prefix" yaml:"metric_prefix"`
+	ErrorBudgetSize   interface{} `yaml:"error_budget_size" json:"error_budget_size"`
+	CalculateInterval string      `yaml:"calculate_interval" json:"calculate_interval"`
+
 	Dashboard          string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
 	configFilePath     string
 	versionConstraints gv.Constraints
@@ -177,13 +184,14 @@ func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // DefinitionConfig is a setting related to SLI/SLO
 type DefinitionConfig struct {
-	ID                        string             `json:"id" yaml:"id"`
-	TimeFrame                 string             `yaml:"time_frame" json:"time_frame"`
-	ServiceName               string             `json:"service_name" yaml:"service_name"`
-	MetricPrefix              string             `json:"metric_prefix" yaml:"metric_prefix"`
-	ErrorBudgetSize           interface{}        `yaml:"error_budget_size" json:"error_budget_size"`
-	CalculateInterval         string             `yaml:"calculate_interval" json:"calculate_interval"`
-	Objectives                []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
+	ID                string             `json:"id" yaml:"id"`
+	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
+	ServiceName       string             `json:"service_name" yaml:"service_name"`
+	MetricPrefix      string             `json:"metric_prefix" yaml:"metric_prefix"`
+	ErrorBudgetSize   interface{}        `yaml:"error_budget_size" json:"error_budget_size"`
+	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
+	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
+
 	calculateInterval         time.Duration
 	timeFrame                 time.Duration
 	errorBudgetSizeParcentage float64
@@ -194,7 +202,8 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.ID = coalesceString(o.ID, c.ID)
 	c.TimeFrame = coalesceString(o.TimeFrame, c.TimeFrame)
 	c.CalculateInterval = coalesceString(o.CalculateInterval, c.CalculateInterval)
-	if o.ErrorBudgetSize != 0.0 {
+	c.MetricPrefix = coalesceString(o.MetricPrefix, c.MetricPrefix)
+	if o.ErrorBudgetSize != nil {
 		c.ErrorBudgetSize = o.ErrorBudgetSize
 	}
 	c.ServiceName = coalesceString(o.ServiceName, c.ServiceName)
@@ -453,6 +462,18 @@ func (c *Config) Restrict() error {
 	}
 	if err := c.Metrics.Restrict(); err != nil {
 		return fmt.Errorf("metrics has invalid: %w", err)
+	}
+
+	for id, cfg := range c.Definitions {
+		base := &DefinitionConfig{
+			TimeFrame:         c.TimeFrame,
+			ServiceName:       c.ServiceName,
+			MetricPrefix:      c.MetricPrefix,
+			ErrorBudgetSize:   c.ErrorBudgetSize,
+			CalculateInterval: c.CalculateInterval,
+		}
+		base.MergeInto(cfg)
+		c.Definitions[id] = base
 	}
 	if err := c.Definitions.Restrict(); err != nil {
 		return fmt.Errorf("definitions has invalid: %w", err)
