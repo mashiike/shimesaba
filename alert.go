@@ -1,6 +1,7 @@
 package shimesaba
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Songmu/flextime"
@@ -12,6 +13,29 @@ type Alert struct {
 	MonitorType string
 	OpenedAt    time.Time
 	ClosedAt    *time.Time
+}
+
+func NewAlert(monitorId, monitorName, monitorType string, openedAt time.Time, closedAt *time.Time) *Alert {
+	if closedAt != nil {
+		tmp := closedAt.Truncate(time.Minute).UTC()
+		closedAt = &tmp
+	}
+	return &Alert{
+		MonitorID:   monitorId,
+		MonitorName: monitorName,
+		MonitorType: monitorType,
+		OpenedAt:    openedAt.Truncate(time.Minute).UTC(),
+		ClosedAt:    closedAt,
+	}
+}
+
+func (alert *Alert) String() string {
+	return fmt.Sprintf("alert[%s] %s %s ~ %s",
+		alert.MonitorID,
+		alert.MonitorName,
+		alert.OpenedAt,
+		alert.ClosedAt,
+	)
 }
 
 type Alerts []*Alert

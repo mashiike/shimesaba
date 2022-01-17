@@ -339,19 +339,14 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 		if err != nil {
 			return nil, err
 		}
-		alert := &Alert{
-			MonitorID:   alert.MonitorID,
-			MonitorName: monitor.MonitorName(),
-			MonitorType: monitor.MonitorType(),
-			OpenedAt:    openedAt,
-			ClosedAt:    closedAt,
-		}
-		log.Printf("[debug] alert[%s] %s %s ~ %s",
+		alert := NewAlert(
 			alert.MonitorID,
-			alert.MonitorName,
-			alert.OpenedAt,
-			alert.ClosedAt,
+			monitor.MonitorName(),
+			monitor.MonitorType(),
+			openedAt,
+			closedAt,
 		)
+		log.Printf("[debug] %s", alert)
 		alerts = append(alerts, alert)
 	}
 	return alerts, nil

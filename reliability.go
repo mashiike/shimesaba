@@ -2,6 +2,7 @@ package shimesaba
 
 import (
 	"errors"
+	"log"
 	"sort"
 	"time"
 
@@ -27,7 +28,7 @@ func (c IsNoViolationCollection) IsUp(t time.Time) bool {
 }
 
 func NewReliability(cursorAt time.Time, timeFrame time.Duration, isNoViolation IsNoViolationCollection) *Reliability {
-	cursorAt = cursorAt.Truncate(timeFrame).Add(timeFrame)
+	cursorAt = cursorAt.Truncate(timeFrame).Add(timeFrame).UTC()
 	r := &Reliability{
 		cursorAt:      cursorAt,
 		timeFrame:     timeFrame,
@@ -154,10 +155,18 @@ func (c ReliabilityCollection) Clone() ReliabilityCollection {
 
 func (c ReliabilityCollection) CalcTime(cursor, n int) (upTime, failureTime, deltaFailureTime time.Duration) {
 	deltaFailureTime = c[cursor].FailureTime()
-	for i := cursor; i < cursor+n && i < c.Len(); i++ {
+	i := cursor
+	for ; i < cursor+n && i < c.Len(); i++ {
 		upTime += c[i].UpTime()
 		failureTime += c[i].FailureTime()
 	}
+	log.Printf("[debug] CalcTime[%s~%s] = (%s, %s, %s)",
+		c[cursor].TimeFrameStartAt(),
+		c[i-1].TimeFrameEndAt(),
+		upTime,
+		failureTime,
+		deltaFailureTime,
+	)
 	return
 }
 

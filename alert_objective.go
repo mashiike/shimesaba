@@ -51,18 +51,27 @@ func (o AlertObjective) newIsNoViolation(alerts Alerts) map[time.Time]bool {
 }
 
 func (o AlertObjective) matchAlert(alert *Alert) bool {
-	log.Printf("[debug] try match alert %v vs %v", o.cfg, alert)
-	if o.cfg.MonitorID != "" && alert.MonitorID != o.cfg.MonitorID {
-		return false
+	log.Printf("[debug] try match %s vs %v", alert, o.cfg)
+	if o.cfg.MonitorID != "" {
+		if alert.MonitorID != o.cfg.MonitorID {
+			return false
+		}
 	}
-	if o.cfg.MonitorNamePrefix != "" && !strings.HasPrefix(alert.MonitorName, o.cfg.MonitorNamePrefix) {
-		return false
+	if o.cfg.MonitorNamePrefix != "" {
+		if !strings.HasPrefix(alert.MonitorName, o.cfg.MonitorNamePrefix) {
+			return false
+		}
 	}
-	if o.cfg.MonitorNameSuffix != "" && !strings.HasSuffix(alert.MonitorName, o.cfg.MonitorNameSuffix) {
-		return false
+	if o.cfg.MonitorNameSuffix != "" {
+		if !strings.HasSuffix(alert.MonitorName, o.cfg.MonitorNameSuffix) {
+			return false
+		}
 	}
-	if o.cfg.MonitorType != "" && !strings.EqualFold(alert.MonitorType, o.cfg.MonitorType) {
-		return false
+	if o.cfg.MonitorType != "" {
+		if !strings.EqualFold(alert.MonitorType, o.cfg.MonitorType) {
+			return false
+		}
 	}
+	log.Printf("[debug] match %s", alert)
 	return true
 }
