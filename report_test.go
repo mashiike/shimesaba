@@ -63,7 +63,10 @@ func TestReport(t *testing.T) {
 }
 
 func TestNewReports(t *testing.T) {
-
+	dest := &shimesaba.Destination{
+		ServiceName:  "test",
+		MetricPrefix: "test",
+	}
 	allTimeIsNoViolation := map[time.Time]bool{
 
 		time.Date(2022, 1, 6, 8, 28, 0, 0, time.UTC): true,
@@ -102,12 +105,11 @@ func TestNewReports(t *testing.T) {
 			),
 		},
 	)
-	actual := shimesaba.NewReports("test", "test", "test", 0.05, 2*time.Hour, c)
+	actual := shimesaba.NewReports("test", dest, 0.05, 2*time.Hour, c)
 	expected := []*shimesaba.Report{
 		{
 			DefinitionID:           "test",
-			ServiceName:            "test",
-			MetricPrefix:           "test",
+			Destination:            dest,
 			DataPoint:              time.Date(2022, 1, 6, 11, 0, 0, 0, time.UTC),
 			TimeFrameStartAt:       time.Date(2022, 1, 6, 9, 0, 0, 0, time.UTC),
 			TimeFrameEndAt:         time.Date(2022, 1, 6, 11, 0, 0, 0, time.UTC).Add(-time.Nanosecond),
@@ -119,8 +121,7 @@ func TestNewReports(t *testing.T) {
 		},
 		{
 			DefinitionID:           "test",
-			ServiceName:            "test",
-			MetricPrefix:           "test",
+			Destination:            dest,
 			DataPoint:              time.Date(2022, 1, 6, 10, 0, 0, 0, time.UTC),
 			TimeFrameStartAt:       time.Date(2022, 1, 6, 8, 0, 0, 0, time.UTC),
 			TimeFrameEndAt:         time.Date(2022, 1, 6, 10, 0, 0, 0, time.UTC).Add(-time.Nanosecond),

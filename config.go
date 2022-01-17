@@ -188,6 +188,7 @@ type DefinitionConfig struct {
 	TimeFrame         string             `yaml:"time_frame" json:"time_frame"`
 	ServiceName       string             `json:"service_name" yaml:"service_name"`
 	MetricPrefix      string             `json:"metric_prefix" yaml:"metric_prefix"`
+	MetricSuffix      string             `json:"metric_suffix" yaml:"metric_suffix"`
 	ErrorBudgetSize   interface{}        `yaml:"error_budget_size" json:"error_budget_size"`
 	CalculateInterval string             `yaml:"calculate_interval" json:"calculate_interval"`
 	Objectives        []*ObjectiveConfig `json:"objectives" yaml:"objectives"`
@@ -225,7 +226,9 @@ func (c *DefinitionConfig) Restrict() error {
 	if c.MetricPrefix == "" {
 		c.MetricPrefix = defaultMetricPrefix
 	}
-
+	if c.MetricSuffix == "" {
+		c.MetricSuffix = c.ID
+	}
 	for i, objective := range c.Objectives {
 		if err := objective.Restrict(); err != nil {
 			return fmt.Errorf("objective[%d] %w", i, err)

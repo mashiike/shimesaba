@@ -98,9 +98,12 @@ func TestDefinition(t *testing.T) {
 			},
 			expected: []*shimesaba.Report{
 				{
-					DefinitionID:           "test1",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "test1",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "test1",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -111,9 +114,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 0,
 				},
 				{
-					DefinitionID:           "test1",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "test1",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "test1",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -124,9 +130,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 4 * time.Minute,
 				},
 				{
-					DefinitionID:           "test1",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "test1",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "test1",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
@@ -153,9 +162,12 @@ func TestDefinition(t *testing.T) {
 			},
 			expected: []*shimesaba.Report{
 				{
-					DefinitionID:           "error_rate",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "error_rate",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "error_rate",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -166,9 +178,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 0,
 				},
 				{
-					DefinitionID:           "error_rate",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "error_rate",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "error_rate",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -179,9 +194,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 0 * time.Minute,
 				},
 				{
-					DefinitionID:           "error_rate",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "error_rate",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "error_rate",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
@@ -213,9 +231,12 @@ func TestDefinition(t *testing.T) {
 			},
 			expected: []*shimesaba.Report{
 				{
-					DefinitionID:           "alert_and_metric_mixing",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "alert_and_metric_mixing",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "alert_and_metric_mixing",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
@@ -226,9 +247,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 4 * time.Minute,
 				},
 				{
-					DefinitionID:           "alert_and_metric_mixing",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "alert_and_metric_mixing",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "alert_and_metric_mixing",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
@@ -239,9 +263,12 @@ func TestDefinition(t *testing.T) {
 					ErrorBudgetConsumption: 0 * time.Minute,
 				},
 				{
-					DefinitionID:           "alert_and_metric_mixing",
-					ServiceName:            "test",
-					MetricPrefix:           "shimesaba",
+					DefinitionID: "alert_and_metric_mixing",
+					Destination: &shimesaba.Destination{
+						ServiceName:  "test",
+						MetricPrefix: "shimesaba",
+						MetricSuffix: "alert_and_metric_mixing",
+					},
 					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
 					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),

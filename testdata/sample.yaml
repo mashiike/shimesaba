@@ -8,12 +8,14 @@ error_budget_size: 40m
 definitions:
   - id: external_api_availability
     metric_prefix: external
+    metric_suffix: availability
     objectives:
       - alert:
           monitor_name_suffix: api.example.com
           monitor_type: external
   - id: internal_api_availability
     metric_prefix: internal
+    metric_suffix: availability
     objectives:
       - alert:
           monitor_name_suffix: api.example.com

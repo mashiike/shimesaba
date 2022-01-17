@@ -31,6 +31,10 @@ func TestConfigLoadNoError(t *testing.T) {
 			casename: "alert_source_config",
 			paths:    []string{"testdata/alert_source.yaml"},
 		},
+		{
+			casename: "sample_config",
+			paths:    []string{"testdata/sample.yaml"},
+		},
 	}
 
 	for _, c := range cases {

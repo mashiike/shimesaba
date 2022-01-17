@@ -94,7 +94,8 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 		}
 		definitions[def.id] = map[string]interface{}{
 			"TimeFrame":               timeutils.DurationString(def.timeFrame),
-			"ServiceName":             def.serviceName,
+			"ServiceName":             def.destination.ServiceName,
+			"Destination":             def.destination,
 			"CalculateInterval":       timeutils.DurationString(def.calculate),
 			"ErrorBudgetSize":         def.errorBudgetSize,
 			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame)).Truncate(time.Minute)),
