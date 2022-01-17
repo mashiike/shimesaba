@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Songmu/flextime"
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
 	"github.com/stretchr/testify/require"
@@ -59,6 +60,24 @@ func TestDefinition(t *testing.T) {
 			metric.AppendValue(tv.Time, tv.Value)
 		}
 		metrics.Set(metric)
+	}
+	restore := flextime.Fix(time.Date(2021, 10, 01, 0, 22, 0, 0, time.UTC))
+	defer restore()
+	alerts := shimesaba.Alerts{
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID: "hogera",
+			},
+			time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC),
+			ptrTime(time.Date(2021, 10, 1, 0, 9, 0, 0, time.UTC)),
+		),
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID: "hogera",
+			},
+			time.Date(2021, 10, 1, 0, 15, 0, 0, time.UTC),
+			nil,
+		),
 	}
 	cases := []struct {
 		defCfg   *shimesaba.DefinitionConfig
@@ -160,6 +179,59 @@ func TestDefinition(t *testing.T) {
 				},
 			},
 		},
+		{
+			defCfg: &shimesaba.DefinitionConfig{
+				ID:                "alert_and_metric_mixing",
+				TimeFrame:         "10m",
+				CalculateInterval: "5m",
+				ErrorBudgetSize:   0.3,
+				Objectives: []*shimesaba.ObjectiveConfig{
+					{
+						Expr: "rate(error_count, request_count) <= 0.5",
+					},
+					{
+						Alert: &shimesaba.AlertObjectiveConfig{
+							MonitorID: "hogera",
+						},
+					},
+				},
+			},
+			expected: []*shimesaba.Report{
+				{
+					DefinitionID:           "alert_and_metric_mixing",
+					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
+					UpTime:                 4 * time.Minute,
+					FailureTime:            6 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            -3 * time.Minute,
+					ErrorBudgetConsumption: 4 * time.Minute,
+				},
+				{
+					DefinitionID:           "alert_and_metric_mixing",
+					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
+					UpTime:                 6 * time.Minute,
+					FailureTime:            4 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            -1 * time.Minute,
+					ErrorBudgetConsumption: 0 * time.Minute,
+				},
+				{
+					DefinitionID:           "alert_and_metric_mixing",
+					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
+					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
+					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
+					UpTime:                 5 * time.Minute,
+					FailureTime:            5 * time.Minute,
+					ErrorBudgetSize:        3 * time.Minute,
+					ErrorBudget:            -2 * time.Minute,
+					ErrorBudgetConsumption: 5 * time.Minute,
+				},
+			},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.defCfg.ID, func(t *testing.T) {
@@ -171,7 +243,10 @@ func TestDefinition(t *testing.T) {
 			}()
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateReports(context.Background(), metrics)
+			actual, err := def.CreateReports(context.Background(), metrics, alerts,
+				time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
+				time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
+			)
 			require.NoError(t, err)
 			t.Log("actual:")
 			for _, a := range actual {

@@ -16,10 +16,8 @@ func NewExprObjective(expr evaluator.Comparator) *ExprObjective {
 	return &ExprObjective{expr: expr}
 }
 
-func (o ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics Metrics) (ReliabilityCollection, error) {
+func (o *ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (ReliabilityCollection, error) {
 	isNoViolation := o.newIsNoViolation(metrics)
-	startAt := metrics.StartAt().Truncate(timeFrame).Add(timeFrame)
-	endAt := metrics.EndAt().Truncate(timeFrame).Add(-timeFrame)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
 	reliabilitySlice := make([]*Reliability, 0)
@@ -30,7 +28,7 @@ func (o ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics
 	return NewReliabilityCollection(reliabilitySlice)
 }
 
-func (o ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {
+func (o *ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {
 	variables := metrics.GetVariables(metrics.StartAt(), metrics.EndAt())
 	ret := make(map[time.Time]bool, len(variables))
 	for t, v := range variables {
@@ -45,4 +43,8 @@ func (o ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {
 		ret[t] = b
 	}
 	return ret
+}
+
+func (o *ExprObjective) String() string {
+	return o.expr.String()
 }

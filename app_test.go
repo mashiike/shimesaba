@@ -51,6 +51,17 @@ func TestAppWithMock(t *testing.T) {
 						"shimesaba.uptime.check":                                backfill,
 					},
 				},
+				{
+					configFile: "testdata/alert_source.yaml",
+					expected: map[string]int{
+						"shimesaba.error_budget.alerts":                        backfill,
+						"shimesaba.error_budget_consumption.alerts":            backfill,
+						"shimesaba.error_budget_consumption_percentage.alerts": backfill,
+						"shimesaba.error_budget_percentage.alerts":             backfill,
+						"shimesaba.failure_time.alerts":                        backfill,
+						"shimesaba.uptime.alerts":                              backfill,
+					},
+				},
 			}
 			for _, c := range cases {
 				t.Run(c.configFile, func(t *testing.T) {
@@ -154,4 +165,47 @@ func (m *mockMackerelClient) PostServiceMetricValues(serviceName string, metricV
 	require.Equal(m.t, "shimesaba", serviceName)
 	m.posted = append(m.posted, metricValues...)
 	return nil
+}
+
+func (m *mockMackerelClient) FindWithClosedAlerts() (*mackerel.AlertsResp, error) {
+	return &mackerel.AlertsResp{
+		Alerts: []*mackerel.Alert{
+			{
+				ID:        "dummyID20211001-001900",
+				Status:    "WARNING",
+				MonitorID: "dummyMonitorID",
+				OpenedAt:  time.Date(2021, 10, 1, 0, 19, 0, 0, time.UTC).Unix(),
+				Value:     0.01,
+				Type:      "service",
+			},
+		},
+		NextID: "dummyNextID",
+	}, nil
+}
+
+func (m *mockMackerelClient) FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error) {
+	require.Equal(m.t, "dummyNextID", nextID)
+	return &mackerel.AlertsResp{
+		Alerts: []*mackerel.Alert{
+			{
+				ID:        "dummyID20211001-001000",
+				Status:    "OK",
+				MonitorID: "dummyMonitorID",
+				OpenedAt:  time.Date(2021, 10, 1, 0, 10, 0, 0, time.UTC).Unix(),
+				ClosedAt:  time.Date(2021, 10, 1, 0, 15, 0, 0, time.UTC).Unix(),
+				Value:     0.01,
+				Type:      "service",
+			},
+		},
+		NextID: "",
+	}, nil
+}
+
+func (m *mockMackerelClient) GetMonitor(monitorID string) (mackerel.Monitor, error) {
+	require.Equal(m.t, "dummyMonitorID", monitorID)
+	return &mackerel.MonitorServiceMetric{
+		ID:   monitorID,
+		Name: "Dummy Service Metric Monitor",
+		Type: "service",
+	}, nil
 }

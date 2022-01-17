@@ -76,11 +76,16 @@ func TestExprObjective(t *testing.T) {
 			comparator, ok := e.AsComparator()
 			require.EqualValues(t, true, ok)
 			obj := shimesaba.NewExprObjective(comparator)
-			actual, err := obj.NewReliabilityCollection(time.Minute, metrics)
+			actual, err := obj.NewReliabilityCollection(
+				time.Minute,
+				metrics,
+				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC),
+				time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
+			)
 			require.NoError(t, err)
-			require.EqualValues(t, 1, len(actual), "only 1 tumbling window")
 			expected, _ := shimesaba.NewReliabilityCollection([]*shimesaba.Reliability{
 				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC), time.Minute, c.expected),
+				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC), time.Minute, c.expected),
 			})
 			require.EqualValues(t, expected, actual)
 		})

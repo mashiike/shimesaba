@@ -209,7 +209,7 @@ func (c *DefinitionConfig) Restrict() error {
 		return errors.New("service_name is required")
 	}
 	if c.ErrorBudgetSize >= 1.0 || c.ErrorBudgetSize <= 0.0 {
-		return errors.New("time_frame must between 1.0 and 0.0")
+		return errors.New("error_budget must between 1.0 and 0.0")
 	}
 	for i, objective := range c.Objectives {
 		if err := objective.Restrict(); err != nil {
@@ -269,22 +269,33 @@ func (c *DefinitionConfig) DurationCalculate() time.Duration {
 	return c.calculateInterval
 }
 
+func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
+	return now.Truncate(c.calculateInterval).Add(-(time.Duration(backfill) * c.calculateInterval) - c.timeFrame)
+}
+
 // Objective Config is a SLO setting
 type ObjectiveConfig struct {
-	Expr string `yaml:"expr" json:"expr"`
+	Expr  string                `yaml:"expr" json:"expr"`
+	Alert *AlertObjectiveConfig `yaml:"alert" json:"alert"`
 
 	comparator evaluator.Comparator
 }
 
 // Restrict restricts a configuration.
 func (c *ObjectiveConfig) Restrict() error {
-	if c.Expr == "" {
-		return errors.New("expr is required")
+	if c.Expr == "" && c.Alert == nil {
+		return errors.New("either expr or alert is required")
 	}
-	if err := c.buildComparator(); err != nil {
-		return err
+	if c.Expr != "" && c.Alert != nil {
+		return errors.New("only one of expr or alert can be set")
 	}
-	return nil
+	if c.Expr != "" {
+		return c.buildComparator()
+	}
+	if c.Alert != nil {
+		return c.Alert.Restrict()
+	}
+	return errors.New("unexpected config")
 }
 
 func (c *ObjectiveConfig) buildComparator() error {
@@ -310,6 +321,36 @@ func (c *ObjectiveConfig) GetComparator() evaluator.Comparator {
 	return c.comparator
 }
 
+//Type returns objective type string
+func (c *ObjectiveConfig) Type() string {
+	if c.Expr != "" {
+		return "expr"
+	}
+	return "alert"
+}
+
+type AlertObjectiveConfig struct {
+	MonitorID         string `json:"monitor_id,omitempty" yaml:"monitor_id,omitempty"`
+	MonitorNamePrefix string `json:"monitor_name_prefix,omitempty" yaml:"monitor_name_prefix,omitempty"`
+	MonitorNameSuffix string `json:"monitor_name_suffix,omitempty" yaml:"monitor_name_suffix,omitempty"`
+	MonitorType       string `json:"monitor_type,omitempty" yaml:"monitor_type,omitempty"`
+}
+
+// Restrict restricts a configuration.
+func (c *AlertObjectiveConfig) Restrict() error {
+	if c.MonitorID != "" {
+		return nil
+	}
+	if c.MonitorNamePrefix != "" {
+		return nil
+	}
+	if c.MonitorNameSuffix != "" {
+		return nil
+	}
+
+	return errors.New("either monitor_id, monitor_name_prefix, monitor_name_suffix or monitor_type is required")
+}
+
 // DefinitionConfigs is a collection of DefinitionConfigs that corrects the uniqueness of IDs.
 type DefinitionConfigs map[string]*DefinitionConfig
 
@@ -324,6 +365,17 @@ func (c DefinitionConfigs) Restrict() error {
 		}
 	}
 	return nil
+}
+
+func (c DefinitionConfigs) StartAt(now time.Time, backfill int) time.Time {
+	startAt := now
+	for _, cfg := range c {
+		tmp := cfg.StartAt(now, backfill)
+		if tmp.Before(startAt) {
+			startAt = tmp
+		}
+	}
+	return startAt
 }
 
 func (c DefinitionConfigs) ToSlice() []*DefinitionConfig {
@@ -366,6 +418,9 @@ func (c *DefinitionConfigs) UnmarshalYAML(unmarshal func(interface{}) error) err
 
 // Load loads configuration file from file paths.
 func (c *Config) Load(paths ...string) error {
+	if len(paths) == 0 {
+		return errors.New("no config")
+	}
 	if err := gc.LoadWithEnv(c, paths...); err != nil {
 		return err
 	}

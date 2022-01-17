@@ -75,11 +75,22 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 	if app.dashboardPath == "" {
 		return nil, errors.New("dashboard file path is not configured")
 	}
-	definitions := make(map[string]interface{}, len(app.definitions))
-	for _, def := range app.definitions {
-		objectives := make([]string, 0, len(def.objectives))
-		for _, obj := range def.objectives {
-			objectives = append(objectives, obj.String())
+	monitors, err := app.repo.FindMonitors()
+	if err != nil {
+		return nil, err
+	}
+	definitions := make(map[string]interface{}, len(app.definitionConfigs))
+	for _, defCfg := range app.definitionConfigs {
+		def, err := NewDefinition(defCfg)
+		if err != nil {
+			return nil, err
+		}
+		exprObjectives := def.ExprObjectives()
+		alertObjectives := def.AlertObjectives(monitors)
+		obj := make([]string, 0, len(exprObjectives)+len(alertObjectives))
+		obj = append(obj, exprObjectives...)
+		for _, o := range alertObjectives {
+			obj = append(obj, o.String())
 		}
 		definitions[def.id] = map[string]interface{}{
 			"TimeFrame":               timeutils.DurationString(def.timeFrame),
@@ -87,7 +98,9 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 			"CalculateInterval":       timeutils.DurationString(def.calculate),
 			"ErrorBudgetSize":         def.errorBudgetSize,
 			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame)).Truncate(time.Minute)),
-			"Objectives":              objectives,
+			"Objectives":              obj,
+			"Exprs":                   exprObjectives,
+			"Monitors":                alertObjectives,
 		}
 	}
 	data := map[string]interface{}{

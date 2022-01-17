@@ -2,8 +2,10 @@ package shimesaba_test
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
@@ -25,6 +27,10 @@ func TestConfigLoadNoError(t *testing.T) {
 			casename: "simple_config",
 			paths:    []string{"testdata/simple.yaml"},
 		},
+		{
+			casename: "alert_source_config",
+			paths:    []string{"testdata/alert_source.yaml"},
+		},
 	}
 
 	for _, c := range cases {
@@ -40,6 +46,49 @@ func TestConfigLoadNoError(t *testing.T) {
 			require.NoError(t, err)
 			err = cfg.Restrict()
 			require.NoError(t, err)
+		})
+	}
+
+}
+
+func TestDefinitionConfigStartAt(t *testing.T) {
+	cases := []struct {
+		now      time.Time
+		backfill int
+		cfg      *shimesaba.DefinitionConfig
+		expected time.Time
+	}{
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "1d",
+				ErrorBudgetSize:   0.05,
+				CalculateInterval: "1h",
+			},
+			expected: time.Date(2022, 1, 13, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "365d",
+				ErrorBudgetSize:   0.05,
+				CalculateInterval: "1d",
+			},
+			expected: time.Date(2021, 1, 11, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
+			require.NoError(t, c.cfg.Restrict())
+			actual := c.cfg.StartAt(c.now, c.backfill)
+			require.EqualValues(t, c.expected, actual)
 		})
 	}
 

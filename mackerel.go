@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
+	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 	retry "github.com/shogo82148/go-retry"
@@ -23,17 +25,26 @@ type MackerelClient interface {
 	FindDashboard(dashboardID string) (*mackerel.Dashboard, error)
 	CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error)
 	UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error)
+
+	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
+	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
+	GetMonitor(monitorID string) (mackerel.Monitor, error)
+	FindMonitors() ([]mackerel.Monitor, error)
 }
 
 // Repository handles reading and writing data
 type Repository struct {
 	client MackerelClient
+
+	mu          sync.Mutex
+	monitorByID map[string]*Monitor
 }
 
 // NewRepository creates Repository
 func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
-		client: client,
+		client:      client,
+		monitorByID: make(map[string]*Monitor),
 	}
 }
 
@@ -273,4 +284,111 @@ func (repo *Repository) SaveDashboard(ctx context.Context, dashboard *Dashboard)
 	}
 	return err
 
+}
+
+// FetchAlerts retrieves alerts for a specified period of time
+func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error) {
+	alerts := make(Alerts, 0, 100)
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
+	resp, err := repo.client.FindWithClosedAlerts()
+	if err != nil {
+		return nil, err
+	}
+	converted, err := repo.convertAlerts(resp, endAt)
+	if err != nil {
+		return nil, err
+	}
+	alerts = append(alerts, converted...)
+	currentAt := flextime.Now()
+	if len(alerts) != 0 {
+		currentAt = alerts[len(alerts)-1].OpenedAt
+	}
+	for startAt.Before(currentAt) && resp.NextID != "" {
+		log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", resp.NextID)
+		resp, err = repo.client.FindWithClosedAlertsByNextID(resp.NextID)
+		if err != nil {
+			return nil, err
+		}
+		converted, err := repo.convertAlerts(resp, endAt)
+		if err != nil {
+			return nil, err
+		}
+		alerts = append(alerts, converted...)
+		if len(alerts) != 0 {
+			currentAt = alerts[len(alerts)-1].OpenedAt
+		}
+	}
+	return alerts, nil
+}
+
+func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) ([]*Alert, error) {
+	alerts := make([]*Alert, 0, len(resp.Alerts))
+	for _, alert := range resp.Alerts {
+		if alert.MonitorID == "" {
+			continue
+		}
+		openedAt := time.Unix(alert.OpenedAt, 0)
+		if openedAt.After(endAt) {
+			continue
+		}
+		var closedAt *time.Time
+		if alert.Status == "OK" {
+			tmpClosedAt := time.Unix(alert.ClosedAt, 0)
+			closedAt = &tmpClosedAt
+		}
+		monitor, err := repo.getMonitor(alert.MonitorID)
+		if err != nil {
+			return nil, err
+		}
+		alert := NewAlert(
+			monitor,
+			openedAt,
+			closedAt,
+		)
+		log.Printf("[debug] %s", alert)
+		alerts = append(alerts, alert)
+	}
+	return alerts, nil
+}
+
+func (repo *Repository) getMonitor(id string) (*Monitor, error) {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+
+	if monitor, ok := repo.monitorByID[id]; ok {
+		return monitor, nil
+	}
+	log.Printf("[debug] call GetMonitor(%s)", id)
+	monitor, err := repo.client.GetMonitor(id)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
+	repo.monitorByID[id] = newMonitor(monitor)
+	return repo.monitorByID[id], nil
+}
+
+func (repo *Repository) FindMonitors() ([]*Monitor, error) {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+	log.Printf("[debug] call FindMonitors()")
+	monitors, err := repo.client.FindMonitors()
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Monitor, 0, len(monitors))
+	for _, m := range monitors {
+		monitor := newMonitor(m)
+		repo.monitorByID[monitor.ID] = monitor
+		ret = append(ret, monitor)
+	}
+	return ret, nil
+}
+
+func newMonitor(monitor mackerel.Monitor) *Monitor {
+	return &Monitor{
+		ID:   monitor.MonitorID(),
+		Name: monitor.MonitorName(),
+		Type: monitor.MonitorType(),
+	}
 }
