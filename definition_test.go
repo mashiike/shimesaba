@@ -64,16 +64,20 @@ func TestDefinition(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, 10, 01, 0, 22, 0, 0, time.UTC))
 	defer restore()
 	alerts := shimesaba.Alerts{
-		{
-			MonitorID: "hogera",
-			OpenedAt:  time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC),
-			ClosedAt:  ptrTime(time.Date(2021, 10, 1, 0, 9, 0, 0, time.UTC)),
-		},
-		{
-			MonitorID: "hogera",
-			OpenedAt:  time.Date(2021, time.October, 1, 0, 15, 0, 0, time.UTC),
-			ClosedAt:  nil,
-		},
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID: "hogera",
+			},
+			time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC),
+			ptrTime(time.Date(2021, 10, 1, 0, 9, 0, 0, time.UTC)),
+		),
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID: "hogera",
+			},
+			time.Date(2021, 10, 1, 0, 15, 0, 0, time.UTC),
+			nil,
+		),
 	}
 	cases := []struct {
 		defCfg   *shimesaba.DefinitionConfig

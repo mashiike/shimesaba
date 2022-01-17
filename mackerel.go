@@ -36,14 +36,14 @@ type Repository struct {
 	client MackerelClient
 
 	mu          sync.Mutex
-	monitorByID map[string]mackerel.Monitor
+	monitorByID map[string]*Monitor
 }
 
 // NewRepository creates Repository
 func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
 		client:      client,
-		monitorByID: make(map[string]mackerel.Monitor),
+		monitorByID: make(map[string]*Monitor),
 	}
 }
 
@@ -340,9 +340,7 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 			return nil, err
 		}
 		alert := NewAlert(
-			alert.MonitorID,
-			monitor.MonitorName(),
-			monitor.MonitorType(),
+			monitor,
 			openedAt,
 			closedAt,
 		)
@@ -352,7 +350,7 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 	return alerts, nil
 }
 
-func (repo *Repository) getMonitor(id string) (mackerel.Monitor, error) {
+func (repo *Repository) getMonitor(id string) (*Monitor, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
 
@@ -365,6 +363,10 @@ func (repo *Repository) getMonitor(id string) (mackerel.Monitor, error) {
 		return nil, err
 	}
 	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = monitor
-	return monitor, nil
+	repo.monitorByID[id] = &Monitor{
+		ID:   id,
+		Name: monitor.MonitorName(),
+		Type: monitor.MonitorType(),
+	}
+	return repo.monitorByID[id], nil
 }

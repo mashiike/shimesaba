@@ -8,31 +8,27 @@ import (
 )
 
 type Alert struct {
-	MonitorID   string
-	MonitorName string
-	MonitorType string
-	OpenedAt    time.Time
-	ClosedAt    *time.Time
+	Monitor  *Monitor
+	OpenedAt time.Time
+	ClosedAt *time.Time
 }
 
-func NewAlert(monitorId, monitorName, monitorType string, openedAt time.Time, closedAt *time.Time) *Alert {
+func NewAlert(monitor *Monitor, openedAt time.Time, closedAt *time.Time) *Alert {
 	if closedAt != nil {
 		tmp := closedAt.Truncate(time.Minute).UTC()
 		closedAt = &tmp
 	}
 	return &Alert{
-		MonitorID:   monitorId,
-		MonitorName: monitorName,
-		MonitorType: monitorType,
-		OpenedAt:    openedAt.Truncate(time.Minute).UTC(),
-		ClosedAt:    closedAt,
+		Monitor:  monitor,
+		OpenedAt: openedAt.Truncate(time.Minute).UTC(),
+		ClosedAt: closedAt,
 	}
 }
 
 func (alert *Alert) String() string {
-	return fmt.Sprintf("alert[%s] %s %s ~ %s",
-		alert.MonitorID,
-		alert.MonitorName,
+	return fmt.Sprintf("alert[%s:%s] %s ~ %s",
+		alert.Monitor.ID,
+		alert.Monitor.Name,
 		alert.OpenedAt,
 		alert.ClosedAt,
 	)

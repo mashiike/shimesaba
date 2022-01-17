@@ -14,34 +14,42 @@ func TestAlertObjective(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC))
 	defer restore()
 	alerts := shimesaba.Alerts{
-		{
-			MonitorID:   "hogera",
-			MonitorName: "SLO hoge",
-			MonitorType: "expression",
-			OpenedAt:    time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
-			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
-		},
-		{
-			MonitorID:   "fugara",
-			MonitorName: "SLO fuga",
-			MonitorType: "service",
-			OpenedAt:    time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
-			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
-		},
-		{
-			MonitorID:   "fugara",
-			MonitorName: "SLO fuga",
-			MonitorType: "service",
-			OpenedAt:    time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
-			ClosedAt:    ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
-		},
-		{
-			MonitorID:   "hogera",
-			MonitorName: "SLO hoge",
-			MonitorType: "expression",
-			OpenedAt:    time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
-			ClosedAt:    nil,
-		},
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID:   "hogera",
+				Name: "SLO hoge",
+				Type: "expression",
+			},
+			time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
+			ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
+		),
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID:   "fugara",
+				Name: "SLO fuga",
+				Type: "service",
+			},
+			time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
+			ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
+		),
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID:   "fugara",
+				Name: "SLO fuga",
+				Type: "service",
+			},
+			time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
+			ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
+		),
+		shimesaba.NewAlert(
+			&shimesaba.Monitor{
+				ID:   "hogera",
+				Name: "SLO hoge",
+				Type: "expression",
+			},
+			time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
+			nil,
+		),
 	}
 	cases := []struct {
 		cfg      *shimesaba.AlertObjectiveConfig
