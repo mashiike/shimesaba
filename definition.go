@@ -95,3 +95,19 @@ func (d *Definition) ExprObjectives() []string {
 	}
 	return objectives
 }
+
+func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {
+	matched := make(map[string]*Monitor)
+	for _, m := range monitors {
+		for _, obj := range d.alertObjectives {
+			if obj.MatchMonitor(m) {
+				matched[m.ID] = m
+			}
+		}
+	}
+	objectiveMonitors := make([]*Monitor, 0, len(matched))
+	for _, monitor := range matched {
+		objectiveMonitors = append(objectiveMonitors, monitor)
+	}
+	return objectiveMonitors
+}

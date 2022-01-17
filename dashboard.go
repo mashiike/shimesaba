@@ -75,6 +75,10 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 	if app.dashboardPath == "" {
 		return nil, errors.New("dashboard file path is not configured")
 	}
+	monitors, err := app.repo.FindMonitors()
+	if err != nil {
+		return nil, err
+	}
 	definitions := make(map[string]interface{}, len(app.definitionConfigs))
 	for _, defCfg := range app.definitionConfigs {
 		def, err := NewDefinition(defCfg)
@@ -82,13 +86,21 @@ func (app *App) loadDashboard() (*Dashboard, error) {
 			return nil, err
 		}
 		exprObjectives := def.ExprObjectives()
+		alertObjectives := def.AlertObjectives(monitors)
+		obj := make([]string, 0, len(exprObjectives)+len(alertObjectives))
+		obj = append(obj, exprObjectives...)
+		for _, o := range alertObjectives {
+			obj = append(obj, o.String())
+		}
 		definitions[def.id] = map[string]interface{}{
 			"TimeFrame":               timeutils.DurationString(def.timeFrame),
 			"ServiceName":             def.serviceName,
 			"CalculateInterval":       timeutils.DurationString(def.calculate),
 			"ErrorBudgetSize":         def.errorBudgetSize,
 			"ErrorBudgetSizeDuration": timeutils.DurationString(time.Duration(def.errorBudgetSize * float64(def.timeFrame)).Truncate(time.Minute)),
-			"Objectives":              exprObjectives,
+			"Objectives":              obj,
+			"Exprs":                   exprObjectives,
+			"Monitors":                alertObjectives,
 		}
 	}
 	data := map[string]interface{}{

@@ -29,6 +29,7 @@ type MackerelClient interface {
 	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
 	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
 	GetMonitor(monitorID string) (mackerel.Monitor, error)
+	FindMonitors() ([]mackerel.Monitor, error)
 }
 
 // Repository handles reading and writing data
@@ -363,10 +364,31 @@ func (repo *Repository) getMonitor(id string) (*Monitor, error) {
 		return nil, err
 	}
 	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = &Monitor{
-		ID:   id,
+	repo.monitorByID[id] = newMonitor(monitor)
+	return repo.monitorByID[id], nil
+}
+
+func (repo *Repository) FindMonitors() ([]*Monitor, error) {
+	repo.mu.Lock()
+	defer repo.mu.Unlock()
+	log.Printf("[debug] call FindMonitors()")
+	monitors, err := repo.client.FindMonitors()
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]*Monitor, 0, len(monitors))
+	for _, m := range monitors {
+		monitor := newMonitor(m)
+		repo.monitorByID[monitor.ID] = monitor
+		ret = append(ret, monitor)
+	}
+	return ret, nil
+}
+
+func newMonitor(monitor mackerel.Monitor) *Monitor {
+	return &Monitor{
+		ID:   monitor.MonitorID(),
 		Name: monitor.MonitorName(),
 		Type: monitor.MonitorType(),
 	}
-	return repo.monitorByID[id], nil
 }
