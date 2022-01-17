@@ -51,6 +51,17 @@ func TestAppWithMock(t *testing.T) {
 						"shimesaba.uptime.check":                                backfill,
 					},
 				},
+				{
+					configFile: "testdata/alert_source.yaml",
+					expected: map[string]int{
+						"shimesaba.error_budget.alerts":                        backfill,
+						"shimesaba.error_budget_consumption.alerts":            backfill,
+						"shimesaba.error_budget_consumption_percentage.alerts": backfill,
+						"shimesaba.error_budget_percentage.alerts":             backfill,
+						"shimesaba.failure_time.alerts":                        backfill,
+						"shimesaba.uptime.alerts":                              backfill,
+					},
+				},
 			}
 			for _, c := range cases {
 				t.Run(c.configFile, func(t *testing.T) {

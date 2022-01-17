@@ -1,14 +1,14 @@
 required_version: ">=0.6.0"
 
 definitions:
-  - id: latency
+  - id: alerts
     service_name:  shimesaba
     time_frame: 5m
     calculate_interval: 1m
     error_budget_size: 0.1
     objectives:
       - alert:
-          monitor_id: "axekau1jia"
+          monitor_id: "dummyMonitorID"
       - alert:
-          monitor_id: "hoekna2jia"
+          monitor_name_prefix: "Dummy"
 
