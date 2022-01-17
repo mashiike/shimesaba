@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -262,17 +263,26 @@ func (c *DefinitionConfig) Restrict() error {
 	}
 
 	if errorBudgetSizeParcentage, ok := c.ErrorBudgetSize.(float64); ok {
+		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizeParcentage)
 		c.errorBudgetSizeParcentage = errorBudgetSizeParcentage
 	}
-	if errorBudgetSizeDurationString, ok := c.ErrorBudgetSize.(string); ok {
-		errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeDurationString)
-		if err != nil {
-			return fmt.Errorf("error_budget can not parse as duration: %w", err)
+	if errorBudgetSizeString, ok := c.ErrorBudgetSize.(string); ok {
+		if strings.ContainsRune(errorBudgetSizeString, '%') {
+			value, err := strconv.ParseFloat(strings.TrimRight(errorBudgetSizeString, `%`), 64)
+			if err != nil {
+				return fmt.Errorf("error_budget can not parse as percentage: %w", err)
+			}
+			c.errorBudgetSizeParcentage = value
+		} else {
+			errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeString)
+			if err != nil {
+				return fmt.Errorf("error_budget can not parse as duration: %w", err)
+			}
+			if errorBudgetSizeDuration >= c.timeFrame || errorBudgetSizeDuration == 0 {
+				return fmt.Errorf("error_budget must between %s and 0m", c.timeFrame)
+			}
+			c.errorBudgetSizeParcentage = float64(errorBudgetSizeDuration) / float64(c.timeFrame)
 		}
-		if errorBudgetSizeDuration >= c.timeFrame || errorBudgetSizeDuration == 0 {
-			return fmt.Errorf("error_budget must between %s and 0m", c.timeFrame)
-		}
-		c.errorBudgetSizeParcentage = float64(errorBudgetSizeDuration) / float64(c.timeFrame)
 	}
 	if c.errorBudgetSizeParcentage >= 1.0 || c.errorBudgetSizeParcentage <= 0.0 {
 		return errors.New("error_budget must between 1.0 and 0.0")

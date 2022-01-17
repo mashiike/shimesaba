@@ -95,5 +95,75 @@ func TestDefinitionConfigStartAt(t *testing.T) {
 			require.EqualValues(t, c.expected, actual)
 		})
 	}
+}
 
+func TestDefinitionConfigErrorBudgetSize(t *testing.T) {
+	cases := []struct {
+		cfg         *shimesaba.DefinitionConfig
+		exceptedErr bool
+		expected    float64
+	}{
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   0.001,
+				CalculateInterval: "1h",
+			},
+			expected: 0.001,
+		},
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   "40m",
+				CalculateInterval: "1d",
+			},
+			expected: 0.001,
+		},
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   "0.001%",
+				CalculateInterval: "1d",
+			},
+			expected: 0.001,
+		},
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   "5m0.001%",
+				CalculateInterval: "1d",
+			},
+			exceptedErr: true,
+		},
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   "0.01",
+				CalculateInterval: "1d",
+			},
+			exceptedErr: true,
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
+			err := c.cfg.Restrict()
+			if !c.exceptedErr {
+				require.NoError(t, err)
+				require.InEpsilon(t, c.expected, c.cfg.ErrorBudgetSizeParcentage(), 0.01)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
 }
