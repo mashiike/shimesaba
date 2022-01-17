@@ -408,6 +408,9 @@ func (c *DefinitionConfigs) UnmarshalYAML(unmarshal func(interface{}) error) err
 
 // Load loads configuration file from file paths.
 func (c *Config) Load(paths ...string) error {
+	if len(paths) == 0 {
+		return errors.New("no config")
+	}
 	if err := gc.LoadWithEnv(c, paths...); err != nil {
 		return err
 	}
