@@ -266,7 +266,7 @@ func (c *DefinitionConfig) Restrict() error {
 	}
 
 	if errorBudgetSizeParcentage, ok := c.ErrorBudgetSize.(float64); ok {
-		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizeParcentage)
+		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizeParcentage*100.0)
 		c.errorBudgetSizeParcentage = errorBudgetSizeParcentage
 	}
 	if errorBudgetSizeString, ok := c.ErrorBudgetSize.(string); ok {
@@ -275,7 +275,7 @@ func (c *DefinitionConfig) Restrict() error {
 			if err != nil {
 				return fmt.Errorf("error_budget can not parse as percentage: %w", err)
 			}
-			c.errorBudgetSizeParcentage = value
+			c.errorBudgetSizeParcentage = value / 100.0
 		} else {
 			errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeString)
 			if err != nil {
