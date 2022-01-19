@@ -19,7 +19,7 @@ func Setup(out io.Writer, minLevel string) {
 			logutils.Color(color.FgYellow),
 			logutils.Color(color.FgRed, color.BgBlack),
 		},
-		MinLevel: logutils.LogLevel(strings.ToUpper(minLevel)),
+		MinLevel: logutils.LogLevel(strings.ToLower(minLevel)),
 		Writer:   out,
 	}
 	log.SetOutput(filter)
