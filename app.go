@@ -54,14 +54,14 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 
 	repo := app.repo
 	if opts.dryRun {
-		log.Println("[info] **with dry run**")
+		log.Println("[warn] **with dry run**")
 		repo = repo.WithDryRun()
 	}
 
 	if opts.backfill <= 0 {
 		return errors.New("backfill must over 0")
 	}
-	log.Println("[debug]", app.metricConfigs)
+	log.Printf("[debug] metricConfigs %#v", app.metricConfigs)
 	now := flextime.Now()
 	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)

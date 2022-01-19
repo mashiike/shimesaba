@@ -205,6 +205,7 @@ func (c *DefinitionConfig) MergeInto(o *DefinitionConfig) {
 	c.TimeFrame = coalesceString(o.TimeFrame, c.TimeFrame)
 	c.CalculateInterval = coalesceString(o.CalculateInterval, c.CalculateInterval)
 	c.MetricPrefix = coalesceString(o.MetricPrefix, c.MetricPrefix)
+	c.MetricSuffix = coalesceString(o.MetricSuffix, c.MetricSuffix)
 	if o.ErrorBudgetSize != nil {
 		c.ErrorBudgetSize = o.ErrorBudgetSize
 	}
@@ -225,9 +226,11 @@ func (c *DefinitionConfig) Restrict() error {
 		return errors.New("service_name is required")
 	}
 	if c.MetricPrefix == "" {
+		log.Printf("[debug] metric_prefix is empty, fallback %s", defaultMetricPrefix)
 		c.MetricPrefix = defaultMetricPrefix
 	}
 	if c.MetricSuffix == "" {
+		log.Printf("[debug] metric_suffix is empty, fallback %s", c.ID)
 		c.MetricSuffix = c.ID
 	}
 	for i, objective := range c.Objectives {
