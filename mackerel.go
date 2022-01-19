@@ -406,7 +406,7 @@ type DryRunMackerelClient struct {
 
 func (c DryRunMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	for _, value := range metricValues {
-		log.Printf("[info] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
+		log.Printf("[notice] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
 	}
 	return nil
 }
@@ -416,7 +416,7 @@ func (c DryRunMackerelClient) CreateDashboard(param *mackerel.Dashboard) (*macke
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[info] **DRY RUN** action=CreateDashboard, dashboard=%s", dashboard)
+	log.Printf("[notice] **DRY RUN** action=CreateDashboard, dashboard=%s", dashboard)
 	return param, nil
 }
 
@@ -425,7 +425,7 @@ func (c DryRunMackerelClient) UpdateDashboard(dashboardID string, param *mackere
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("[info] **DRY RUN** action=UpdateDashboard, dashboard_id=`%s`, dashboard=%s", dashboardID, dashboard)
+	log.Printf("[notice] **DRY RUN** action=UpdateDashboard, dashboard_id=`%s`, dashboard=%s", dashboardID, dashboard)
 	return param, nil
 }
 

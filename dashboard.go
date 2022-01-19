@@ -57,7 +57,7 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	}
 	repo := app.repo
 	if opts.dryRun {
-		log.Println("[warn] **with dry run**")
+		log.Println("[notice] **with dry run**")
 		repo = repo.WithDryRun()
 	}
 
