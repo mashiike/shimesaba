@@ -128,7 +128,7 @@ func TestDefinitionConfigErrorBudgetSize(t *testing.T) {
 				ID:                "test",
 				ServiceName:       "shimesaba",
 				TimeFrame:         "28d",
-				ErrorBudgetSize:   "0.001%",
+				ErrorBudgetSize:   "0.1%",
 				CalculateInterval: "1d",
 			},
 			expected: 0.001,
