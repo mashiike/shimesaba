@@ -1,7 +1,6 @@
 package shimesaba
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -56,19 +55,17 @@ func (app *App) DashboardBuild(ctx context.Context, optFns ...func(*Options)) er
 	for _, optFn := range optFns {
 		optFn(opts)
 	}
+	repo := app.repo
+	if opts.dryRun {
+		log.Println("[warn] **with dry run**")
+		repo = repo.WithDryRun()
+	}
+
 	dashboard, err := app.loadDashboard()
 	if err != nil {
 		return err
 	}
-	if opts.dryRun {
-		var buf bytes.Buffer
-		if err := app.writeDashboard(&buf, dashboard); err != nil {
-			return err
-		}
-		log.Printf("[info] build dashboard **dry run** %s", buf.String())
-		return nil
-	}
-	return app.repo.SaveDashboard(ctx, dashboard)
+	return repo.SaveDashboard(ctx, dashboard)
 }
 
 func (app *App) loadDashboard() (*Dashboard, error) {

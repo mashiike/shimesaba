@@ -2,7 +2,6 @@ package shimesaba
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -15,7 +14,7 @@ import (
 
 //App manages life cycle
 type App struct {
-	repo Repository
+	repo *Repository
 
 	metricConfigs     MetricConfigs
 	definitionConfigs DefinitionConfigs
@@ -33,7 +32,7 @@ func New(apikey string, cfg *Config) (*App, error) {
 //NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 	app := &App{
-		repo:              *NewRepository(client),
+		repo:              NewRepository(client),
 		metricConfigs:     cfg.Metrics,
 		definitionConfigs: cfg.Definitions,
 		cfgPath:           cfg.configFilePath,
@@ -52,6 +51,13 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	for _, optFn := range optFns {
 		optFn(opts)
 	}
+
+	repo := app.repo
+	if opts.dryRun {
+		log.Println("[info] **with dry run**")
+		repo = repo.WithDryRun()
+	}
+
 	if opts.backfill <= 0 {
 		return errors.New("backfill must over 0")
 	}
@@ -59,13 +65,13 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	now := flextime.Now()
 	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
 	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
-	metrics, err := app.repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
+	metrics, err := repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
 	if err != nil {
 		return err
 	}
 	log.Println("[info] fetched metrics", metrics)
 	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
-	alerts, err := app.repo.FetchAlerts(ctx, startAt, now)
+	alerts, err := repo.FetchAlerts(ctx, startAt, now)
 	if err != nil {
 		return err
 	}
@@ -93,18 +99,10 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 			}
 			reports = reports[n:]
 		}
-		if opts.dryRun {
-			log.Printf("[info] dryrun! output stdout reports[%s]\n", d.ID())
-			bs, err := json.MarshalIndent(reports, "", "  ")
-			if err != nil {
-				return fmt.Errorf("objective[%s] marshal reports failed: %w", d.ID(), err)
-			}
-			fmt.Println(string(bs))
-		} else {
-			log.Printf("[info] save reports[%s]\n", d.ID())
-			if err := app.repo.SaveReports(ctx, reports); err != nil {
-				return fmt.Errorf("objective[%s] save report failed: %w", d.ID(), err)
-			}
+
+		log.Printf("[info] save reports[%s]\n", d.ID())
+		if err := repo.SaveReports(ctx, reports); err != nil {
+			return fmt.Errorf("objective[%s] save report failed: %w", d.ID(), err)
 		}
 	}
 	runTime := flextime.Now().Sub(now)
