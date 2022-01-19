@@ -128,7 +128,7 @@ func TestDefinitionConfigErrorBudgetSize(t *testing.T) {
 				ID:                "test",
 				ServiceName:       "shimesaba",
 				TimeFrame:         "28d",
-				ErrorBudgetSize:   "0.001%",
+				ErrorBudgetSize:   "0.1%",
 				CalculateInterval: "1d",
 			},
 			expected: 0.001,
@@ -164,6 +164,47 @@ func TestDefinitionConfigErrorBudgetSize(t *testing.T) {
 			} else {
 				require.Error(t, err)
 			}
+		})
+	}
+}
+
+func TestDefinitionConfigMetricPrefixSuffix(t *testing.T) {
+	cases := []struct {
+		cfg            *shimesaba.DefinitionConfig
+		expectedPrefix string
+		expectedSuffix string
+	}{
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   0.001,
+				CalculateInterval: "1h",
+			},
+			expectedPrefix: "shimesaba",
+			expectedSuffix: "test",
+		},
+		{
+			cfg: &shimesaba.DefinitionConfig{
+				ID:                "test",
+				ServiceName:       "shimesaba",
+				TimeFrame:         "28d",
+				ErrorBudgetSize:   0.001,
+				CalculateInterval: "1h",
+				MetricPrefix:      "hoge",
+				MetricSuffix:      "fuga",
+			},
+			expectedPrefix: "hoge",
+			expectedSuffix: "fuga",
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
+			err := c.cfg.Restrict()
+			require.NoError(t, err)
+			require.Equal(t, c.expectedPrefix, c.cfg.MetricPrefix)
 		})
 	}
 }

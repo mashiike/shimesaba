@@ -146,12 +146,6 @@ func main() {
 			minLevel = "debug"
 		}
 		logger.Setup(os.Stderr, minLevel)
-		switch c.Args().First() {
-		case "help", "h", "version":
-			return nil
-		default:
-		}
-
 		return nil
 	}
 

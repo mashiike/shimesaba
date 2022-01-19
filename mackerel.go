@@ -1,7 +1,9 @@
 package shimesaba
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -387,4 +389,52 @@ func newMonitor(monitor mackerel.Monitor) *Monitor {
 		Name: monitor.MonitorName(),
 		Type: monitor.MonitorType(),
 	}
+}
+
+func (repo *Repository) WithDryRun() *Repository {
+	return &Repository{
+		client: DryRunMackerelClient{
+			MackerelClient: repo.client,
+		},
+		monitorByID: repo.monitorByID,
+	}
+}
+
+type DryRunMackerelClient struct {
+	MackerelClient
+}
+
+func (c DryRunMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
+	for _, value := range metricValues {
+		log.Printf("[notice] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
+	}
+	return nil
+}
+
+func (c DryRunMackerelClient) CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
+	dashboard, err := dashboardToString(param)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[notice] **DRY RUN** action=CreateDashboard, dashboard=%s", dashboard)
+	return param, nil
+}
+
+func (c DryRunMackerelClient) UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
+	dashboard, err := dashboardToString(param)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("[notice] **DRY RUN** action=UpdateDashboard, dashboard_id=`%s`, dashboard=%s", dashboardID, dashboard)
+	return param, nil
+}
+
+func dashboardToString(param *mackerel.Dashboard) (string, error) {
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(param); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
