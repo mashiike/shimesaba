@@ -61,7 +61,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	var Reliabilities Reliabilities
 	log.Printf("[debug] expr objective count = %d", len(d.exprObjectives))
 	for _, o := range d.exprObjectives {
-		rc, err := o.NewReliabilities(d.calculate, metrics, startAt, endAt)
+		rc, err := o.CalculateReliabilities(d.calculate, metrics, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}
@@ -72,7 +72,7 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	}
 	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
 	for _, o := range d.alertObjectives {
-		rc, err := o.NewReliabilities(d.calculate, alerts, startAt, endAt)
+		rc, err := o.CalculateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}

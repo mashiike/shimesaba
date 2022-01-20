@@ -35,7 +35,7 @@ func (alert *Alert) String() string {
 	)
 }
 
-func (alert *Alert) NewReliabilities(timeFrame time.Duration) (Reliabilities, error) {
+func (alert *Alert) CalculateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
 	isNoViolation, startAt, endAt := alert.newIsNoViolation()
 	startAt = startAt.Truncate(timeFrame)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)

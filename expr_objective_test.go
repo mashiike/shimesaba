@@ -76,7 +76,7 @@ func TestExprObjective(t *testing.T) {
 			comparator, ok := e.AsComparator()
 			require.EqualValues(t, true, ok)
 			obj := shimesaba.NewExprObjective(comparator)
-			actual, err := obj.NewReliabilities(
+			actual, err := obj.CalculateReliabilities(
 				time.Minute,
 				metrics,
 				time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC),

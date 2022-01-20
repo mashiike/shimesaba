@@ -126,7 +126,7 @@ func TestAlertObjective(t *testing.T) {
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
 			obj := shimesaba.NewAlertObjective(c.cfg)
-			actual, err := obj.NewReliabilities(
+			actual, err := obj.CalculateReliabilities(
 				time.Minute,
 				alerts,
 				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
