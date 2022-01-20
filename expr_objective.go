@@ -28,9 +28,9 @@ func (o *ExprObjective) EvaluateReliabilities(timeFrame time.Duration, metrics M
 	return NewReliabilities(reliabilitySlice)
 }
 
-func (o *ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {
+func (o *ExprObjective) newIsNoViolation(metrics Metrics) IsNoViolationCollection {
 	variables := metrics.GetVariables(metrics.StartAt(), metrics.EndAt())
-	ret := make(map[time.Time]bool, len(variables))
+	ret := make(IsNoViolationCollection, len(variables))
 	for t, v := range variables {
 		b, err := o.expr.Compare(v)
 		if evaluator.IsDivideByZero(err) {
@@ -40,7 +40,10 @@ func (o *ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {
 			log.Printf("[warn] compare failed expr=%s time=%s reason=%s", o.expr.String(), t, err)
 			continue
 		}
-		ret[t] = b
+		if !b {
+			log.Printf("[debug] SLO violation, expr=`%s`, time=`%s`", o.expr, t.UTC())
+		}
+		ret[t.UTC()] = b
 	}
 	return ret
 }
