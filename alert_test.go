@@ -57,7 +57,7 @@ func TestAlerts(t *testing.T) {
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC), alerts.EndAt())
 }
 
-func TestAlertCalculateReliabilities(t *testing.T) {
+func TestAlertEvaluateReliabilities(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC))
 	defer restore()
 	cases := []struct {
@@ -146,7 +146,7 @@ func TestAlertCalculateReliabilities(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
-			actual, err := c.alert.CalculateReliabilities(c.timeFrame)
+			actual, err := c.alert.EvaluateReliabilities(c.timeFrame)
 			require.NoError(t, err)
 			require.EqualValues(t, c.expectedGenerator(), actual)
 		})

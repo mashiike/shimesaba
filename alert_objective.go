@@ -16,7 +16,7 @@ func NewAlertObjective(cfg *AlertObjectiveConfig) *AlertObjective {
 	return &AlertObjective{cfg: cfg}
 }
 
-func (o AlertObjective) CalculateReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
+func (o AlertObjective) EvaluateReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
 	rc := make([]*Reliability, 0)
@@ -32,7 +32,7 @@ func (o AlertObjective) CalculateReliabilities(timeFrame time.Duration, alerts A
 		if !o.matchAlert(alert) {
 			continue
 		}
-		tmp, err := alert.CalculateReliabilities(timeFrame)
+		tmp, err := alert.EvaluateReliabilities(timeFrame)
 		if err != nil {
 			return nil, err
 		}

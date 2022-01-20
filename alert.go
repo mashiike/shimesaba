@@ -10,6 +10,7 @@ import (
 
 type Alert struct {
 	Monitor  *Monitor
+	HostID   string
 	OpenedAt time.Time
 	ClosedAt *time.Time
 }
@@ -25,6 +26,14 @@ func NewAlert(monitor *Monitor, openedAt time.Time, closedAt *time.Time) *Alert 
 		ClosedAt: closedAt,
 	}
 }
+func (alert *Alert) WithHostID(hostID string) *Alert {
+	return &Alert{
+		Monitor:  alert.Monitor,
+		OpenedAt: alert.OpenedAt,
+		ClosedAt: alert.ClosedAt,
+		HostID:   hostID,
+	}
+}
 
 func (alert *Alert) String() string {
 	return fmt.Sprintf("alert[%s:%s] %s ~ %s",
@@ -35,26 +44,19 @@ func (alert *Alert) String() string {
 	)
 }
 
-func (alert *Alert) CalculateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
+func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
 	isNoViolation, startAt, endAt := alert.newIsNoViolation()
-	startAt = startAt.Truncate(timeFrame)
-	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
-	reliabilitySlice := make([]*Reliability, 0)
-	for iter.HasNext() {
-		cursorAt, _ := iter.Next()
-		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, isNoViolation))
-	}
-	return NewReliabilities(reliabilitySlice)
+	return isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
 }
 
-func (alert *Alert) newIsNoViolation() (isNoViolation map[time.Time]bool, startAt, endAt time.Time) {
+func (alert *Alert) newIsNoViolation() (isNoViolation IsNoViolationCollection, startAt, endAt time.Time) {
 	startAt = alert.OpenedAt
 	endAt = flextime.Now().Add(time.Minute)
 	if alert.ClosedAt != nil {
 		endAt = *alert.ClosedAt
 	}
 
-	isNoViolation = make(map[time.Time]bool, endAt.Sub(startAt)/time.Minute)
+	isNoViolation = make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
 	iter := timeutils.NewIterator(startAt, endAt, time.Minute)
 	for iter.HasNext() {
 		t, _ := iter.Next()

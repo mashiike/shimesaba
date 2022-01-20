@@ -27,6 +27,17 @@ func (c IsNoViolationCollection) IsUp(t time.Time) bool {
 	return true
 }
 
+func (c IsNoViolationCollection) NewReliabilities(timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, error) {
+	startAt = startAt.Truncate(timeFrame)
+	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
+	reliabilitySlice := make([]*Reliability, 0)
+	for iter.HasNext() {
+		cursorAt, _ := iter.Next()
+		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, c))
+	}
+	return NewReliabilities(reliabilitySlice)
+}
+
 func NewReliability(cursorAt time.Time, timeFrame time.Duration, isNoViolation IsNoViolationCollection) *Reliability {
 	cursorAt = cursorAt.Truncate(timeFrame).Add(timeFrame).UTC()
 	r := &Reliability{

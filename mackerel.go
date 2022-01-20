@@ -338,13 +338,14 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 		if err != nil {
 			return nil, err
 		}
-		alert := NewAlert(
+		a := NewAlert(
 			monitor,
 			openedAt,
 			closedAt,
 		)
-		log.Printf("[debug] %s", alert)
-		alerts = append(alerts, alert)
+		a = a.WithHostID(alert.HostID)
+		log.Printf("[debug] %s", a)
+		alerts = append(alerts, a)
 	}
 	return alerts, nil
 }
@@ -362,7 +363,7 @@ func (repo *Repository) getMonitor(id string) (*Monitor, error) {
 		return nil, err
 	}
 	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = convertMonitor(monitor)
+	repo.monitorByID[id] = repo.convertMonitor(monitor)
 	return repo.monitorByID[id], nil
 }
 
@@ -376,19 +377,77 @@ func (repo *Repository) FindMonitors() ([]*Monitor, error) {
 	}
 	ret := make([]*Monitor, 0, len(monitors))
 	for _, m := range monitors {
-		monitor := convertMonitor(m)
+		monitor := repo.convertMonitor(m)
 		repo.monitorByID[monitor.ID()] = monitor
 		ret = append(ret, monitor)
 	}
 	return ret, nil
 }
 
-func convertMonitor(monitor mackerel.Monitor) *Monitor {
-	return NewMonitor(
+func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
+	m := NewMonitor(
 		monitor.MonitorID(),
 		monitor.MonitorName(),
 		monitor.MonitorType(),
 	)
+	switch monitor := monitor.(type) {
+	case *mackerel.MonitorHostMetric:
+		m = m.WithEvaluator(func(hostID string, timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, bool) {
+			metrics, err := repo.client.FetchHostMetricValues(hostID, monitor.Metric, startAt.Unix(), endAt.Unix())
+			if err != nil {
+				log.Printf("[debug] FetchHostMetricValues failed: %s", err)
+				log.Printf("[warn] monitor `%s`, can not get host metric = `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Metric)
+				return nil, false
+			}
+			isNoViolation := make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
+			for _, metric := range metrics {
+				cursorAt := time.Unix(metric.Time, 0).UTC()
+				value, ok := metric.Value.(float64)
+				if !ok {
+					continue
+				}
+				switch monitor.Operator {
+				case ">":
+					if monitor.Warning != nil {
+						if value > *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value > *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							continue
+						}
+					}
+				case "<":
+					if monitor.Warning != nil {
+						if value < *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value < *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							continue
+						}
+					}
+				default:
+					log.Printf("[warn] monitor `%s`, unknown operator `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Operator)
+					return nil, false
+				}
+			}
+			reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+			if err != nil {
+				log.Printf("[debug] NewReliabilities failed: %s", err)
+				log.Printf("[warn] monitor `%s`, reliability reassessment based on metric is not enabled.", monitor.Name)
+				return nil, false
+			}
+			return reliabilities, true
+		})
+	}
+	return m
 }
 
 func (repo *Repository) WithDryRun() *Repository {

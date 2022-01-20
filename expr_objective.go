@@ -16,7 +16,7 @@ func NewExprObjective(expr evaluator.Comparator) *ExprObjective {
 	return &ExprObjective{expr: expr}
 }
 
-func (o *ExprObjective) CalculateReliabilities(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (Reliabilities, error) {
+func (o *ExprObjective) EvaluateReliabilities(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (Reliabilities, error) {
 	isNoViolation := o.newIsNoViolation(metrics)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
