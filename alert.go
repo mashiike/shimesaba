@@ -35,7 +35,7 @@ func (alert *Alert) String() string {
 	)
 }
 
-func (alert *Alert) NewReliabilityCollection(timeFrame time.Duration) (ReliabilityCollection, error) {
+func (alert *Alert) NewReliabilities(timeFrame time.Duration) (Reliabilities, error) {
 	isNoViolation, startAt, endAt := alert.newIsNoViolation()
 	startAt = startAt.Truncate(timeFrame)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
@@ -44,7 +44,7 @@ func (alert *Alert) NewReliabilityCollection(timeFrame time.Duration) (Reliabili
 		cursorAt, _ := iter.Next()
 		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, isNoViolation))
 	}
-	return NewReliabilityCollection(reliabilitySlice)
+	return NewReliabilities(reliabilitySlice)
 }
 
 func (alert *Alert) newIsNoViolation() (isNoViolation map[time.Time]bool, startAt, endAt time.Time) {

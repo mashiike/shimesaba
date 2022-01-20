@@ -86,7 +86,7 @@ func TestNewReports(t *testing.T) {
 		time.Date(2022, 1, 6, 10, 40, 0, 0, time.UTC): false,
 	}
 	tumblingWindowTimeFrame := time.Hour
-	c, _ := shimesaba.NewReliabilityCollection(
+	c, _ := shimesaba.NewReliabilities(
 		[]*shimesaba.Reliability{
 			shimesaba.NewReliability(
 				time.Date(2022, 1, 6, 9, 0, 0, 0, time.UTC),

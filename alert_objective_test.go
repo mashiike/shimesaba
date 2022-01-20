@@ -126,14 +126,14 @@ func TestAlertObjective(t *testing.T) {
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
 			obj := shimesaba.NewAlertObjective(c.cfg)
-			actual, err := obj.NewReliabilityCollection(
+			actual, err := obj.NewReliabilities(
 				time.Minute,
 				alerts,
 				time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
 				time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
 			)
 			require.NoError(t, err)
-			expected, _ := shimesaba.NewReliabilityCollection([]*shimesaba.Reliability{
+			expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
 				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), time.Minute, c.expected),
 				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC), time.Minute, c.expected),
 				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC), time.Minute, c.expected),

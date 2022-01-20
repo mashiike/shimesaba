@@ -49,13 +49,13 @@ func TestAlerts(t *testing.T) {
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC), alerts.EndAt())
 }
 
-func TestAlertNewReliabilityCollection(t *testing.T) {
+func TestAlertNewReliabilities(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC))
 	defer restore()
 	cases := []struct {
 		alert             *shimesaba.Alert
 		timeFrame         time.Duration
-		expectedGenerator func() shimesaba.ReliabilityCollection
+		expectedGenerator func() shimesaba.Reliabilities
 	}{
 		{
 			alert: shimesaba.NewAlert(
@@ -66,12 +66,12 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 				ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 			),
 			timeFrame: 5 * time.Minute,
-			expectedGenerator: func() shimesaba.ReliabilityCollection {
+			expectedGenerator: func() shimesaba.Reliabilities {
 				isNoViolation := map[time.Time]bool{
 					time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC): false,
 					time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC): false,
 				}
-				expected, _ := shimesaba.NewReliabilityCollection([]*shimesaba.Reliability{
+				expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), 5*time.Minute, isNoViolation),
 				})
 				return expected
@@ -86,7 +86,7 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 				ptrTime(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC)),
 			),
 			timeFrame: 5 * time.Minute,
-			expectedGenerator: func() shimesaba.ReliabilityCollection {
+			expectedGenerator: func() shimesaba.Reliabilities {
 				isNoViolation := map[time.Time]bool{
 					time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC): false,
 					time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC): false,
@@ -94,7 +94,7 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 					time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC): false,
 					time.Date(2021, time.October, 1, 0, 7, 0, 0, time.UTC): false,
 				}
-				expected, _ := shimesaba.NewReliabilityCollection([]*shimesaba.Reliability{
+				expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), 5*time.Minute, isNoViolation),
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC), 5*time.Minute, isNoViolation),
 				})
@@ -110,7 +110,7 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 				nil,
 			),
 			timeFrame: 2 * time.Minute,
-			expectedGenerator: func() shimesaba.ReliabilityCollection {
+			expectedGenerator: func() shimesaba.Reliabilities {
 				isNoViolation := map[time.Time]bool{
 					time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC): true,
 					time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC): false,
@@ -120,7 +120,7 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 					time.Date(2021, time.October, 1, 0, 7, 0, 0, time.UTC): false,
 					time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC): false,
 				}
-				expected, _ := shimesaba.NewReliabilityCollection([]*shimesaba.Reliability{
+				expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC), 2*time.Minute, isNoViolation),
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC), 2*time.Minute, isNoViolation),
 					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC), 2*time.Minute, isNoViolation),
@@ -132,7 +132,7 @@ func TestAlertNewReliabilityCollection(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
-			actual, err := c.alert.NewReliabilityCollection(c.timeFrame)
+			actual, err := c.alert.NewReliabilities(c.timeFrame)
 			require.NoError(t, err)
 			require.EqualValues(t, c.expectedGenerator(), actual)
 		})

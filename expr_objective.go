@@ -16,7 +16,7 @@ func NewExprObjective(expr evaluator.Comparator) *ExprObjective {
 	return &ExprObjective{expr: expr}
 }
 
-func (o *ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (ReliabilityCollection, error) {
+func (o *ExprObjective) NewReliabilities(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (Reliabilities, error) {
 	isNoViolation := o.newIsNoViolation(metrics)
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
@@ -25,7 +25,7 @@ func (o *ExprObjective) NewReliabilityCollection(timeFrame time.Duration, metric
 		cursorAt, _ := iter.Next()
 		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, isNoViolation))
 	}
-	return NewReliabilityCollection(reliabilitySlice)
+	return NewReliabilities(reliabilitySlice)
 }
 
 func (o *ExprObjective) newIsNoViolation(metrics Metrics) map[time.Time]bool {

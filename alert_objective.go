@@ -16,7 +16,7 @@ func NewAlertObjective(cfg *AlertObjectiveConfig) *AlertObjective {
 	return &AlertObjective{cfg: cfg}
 }
 
-func (o AlertObjective) NewReliabilityCollection(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (ReliabilityCollection, error) {
+func (o AlertObjective) NewReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
 	rc := make([]*Reliability, 0)
@@ -24,7 +24,7 @@ func (o AlertObjective) NewReliabilityCollection(timeFrame time.Duration, alerts
 		cursorAt, _ := iter.Next()
 		rc = append(rc, NewReliability(cursorAt, timeFrame, nil))
 	}
-	reliabilities, err := NewReliabilityCollection(rc)
+	reliabilities, err := NewReliabilities(rc)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (o AlertObjective) NewReliabilityCollection(timeFrame time.Duration, alerts
 		if !o.matchAlert(alert) {
 			continue
 		}
-		tmp, err := alert.NewReliabilityCollection(timeFrame)
+		tmp, err := alert.NewReliabilities(timeFrame)
 		if err != nil {
 			return nil, err
 		}

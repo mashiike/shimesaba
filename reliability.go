@@ -117,11 +117,11 @@ func (r *Reliability) Merge(other *Reliability) (*Reliability, error) {
 	return cloned, nil
 }
 
-// ReliabilityCollection is sortable
-type ReliabilityCollection []*Reliability
+// Reliabilities is sortable
+type Reliabilities []*Reliability
 
-func NewReliabilityCollection(s []*Reliability) (ReliabilityCollection, error) {
-	c := ReliabilityCollection(s)
+func NewReliabilities(s []*Reliability) (Reliabilities, error) {
+	c := Reliabilities(s)
 	sort.Sort(c)
 	if c.Len() == 0 {
 		return c, nil
@@ -140,12 +140,12 @@ func NewReliabilityCollection(s []*Reliability) (ReliabilityCollection, error) {
 	return c, nil
 }
 
-func (c ReliabilityCollection) Len() int           { return len(c) }
-func (c ReliabilityCollection) Less(i, j int) bool { return c[i].CursorAt().After(c[j].CursorAt()) }
-func (c ReliabilityCollection) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
+func (c Reliabilities) Len() int           { return len(c) }
+func (c Reliabilities) Less(i, j int) bool { return c[i].CursorAt().After(c[j].CursorAt()) }
+func (c Reliabilities) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
 
-func (c ReliabilityCollection) Clone() ReliabilityCollection {
-	cloned := make(ReliabilityCollection, 0, len(c))
+func (c Reliabilities) Clone() Reliabilities {
+	cloned := make(Reliabilities, 0, len(c))
 	for _, r := range c {
 		cloned = append(cloned, r.Clone())
 	}
@@ -153,7 +153,7 @@ func (c ReliabilityCollection) Clone() ReliabilityCollection {
 	return cloned
 }
 
-func (c ReliabilityCollection) CalcTime(cursor, n int) (upTime, failureTime, deltaFailureTime time.Duration) {
+func (c Reliabilities) CalcTime(cursor, n int) (upTime, failureTime, deltaFailureTime time.Duration) {
 	deltaFailureTime = c[cursor].FailureTime()
 	i := cursor
 	for ; i < cursor+n && i < c.Len(); i++ {
@@ -171,7 +171,7 @@ func (c ReliabilityCollection) CalcTime(cursor, n int) (upTime, failureTime, del
 }
 
 //TimeFrame is the size of the tumbling window
-func (c ReliabilityCollection) TimeFrame() time.Duration {
+func (c Reliabilities) TimeFrame() time.Duration {
 	if c.Len() == 0 {
 		return 0
 	}
@@ -179,7 +179,7 @@ func (c ReliabilityCollection) TimeFrame() time.Duration {
 }
 
 //CursorAt is a representative value of the time shown by the tumbling window
-func (c ReliabilityCollection) CursorAt(i int) time.Time {
+func (c Reliabilities) CursorAt(i int) time.Time {
 	if c.Len() == 0 {
 		return time.Unix(0, 0)
 	}
@@ -187,11 +187,11 @@ func (c ReliabilityCollection) CursorAt(i int) time.Time {
 }
 
 //Merge two collection
-func (c ReliabilityCollection) Merge(other ReliabilityCollection) (ReliabilityCollection, error) {
+func (c Reliabilities) Merge(other Reliabilities) (Reliabilities, error) {
 	return c.MergeInRange(other, time.Unix(0, 0).UTC(), time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC))
 }
 
-func (c ReliabilityCollection) MergeInRange(other ReliabilityCollection, startAt, endAt time.Time) (ReliabilityCollection, error) {
+func (c Reliabilities) MergeInRange(other Reliabilities, startAt, endAt time.Time) (Reliabilities, error) {
 	if len(other) == 0 {
 		return c.Clone(), nil
 	}
@@ -230,5 +230,5 @@ func (c ReliabilityCollection) MergeInRange(other ReliabilityCollection, startAt
 	for _, r := range reliabilityByCursorAt {
 		merged = append(merged, r)
 	}
-	return NewReliabilityCollection(merged)
+	return NewReliabilities(merged)
 }
