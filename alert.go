@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Songmu/flextime"
+	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 type Alert struct {
@@ -32,6 +33,34 @@ func (alert *Alert) String() string {
 		alert.OpenedAt,
 		alert.ClosedAt,
 	)
+}
+
+func (alert *Alert) NewReliabilityCollection(timeFrame time.Duration) (ReliabilityCollection, error) {
+	isNoViolation, startAt, endAt := alert.newIsNoViolation()
+	startAt = startAt.Truncate(timeFrame)
+	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
+	reliabilitySlice := make([]*Reliability, 0)
+	for iter.HasNext() {
+		cursorAt, _ := iter.Next()
+		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, isNoViolation))
+	}
+	return NewReliabilityCollection(reliabilitySlice)
+}
+
+func (alert *Alert) newIsNoViolation() (isNoViolation map[time.Time]bool, startAt, endAt time.Time) {
+	startAt = alert.OpenedAt
+	endAt = flextime.Now().Add(time.Minute)
+	if alert.ClosedAt != nil {
+		endAt = *alert.ClosedAt
+	}
+
+	isNoViolation = make(map[time.Time]bool, endAt.Sub(startAt)/time.Minute)
+	iter := timeutils.NewIterator(startAt, endAt, time.Minute)
+	for iter.HasNext() {
+		t, _ := iter.Next()
+		isNoViolation[t] = false
+	}
+	return
 }
 
 type Alerts []*Alert

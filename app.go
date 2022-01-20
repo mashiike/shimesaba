@@ -54,7 +54,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 
 	repo := app.repo
 	if opts.dryRun {
-		log.Println("[warn] **with dry run**")
+		log.Println("[notice] **with dry run**")
 		repo = repo.WithDryRun()
 	}
 

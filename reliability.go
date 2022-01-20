@@ -188,6 +188,10 @@ func (c ReliabilityCollection) CursorAt(i int) time.Time {
 
 //Merge two collection
 func (c ReliabilityCollection) Merge(other ReliabilityCollection) (ReliabilityCollection, error) {
+	return c.MergeInRange(other, time.Unix(0, 0).UTC(), time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC))
+}
+
+func (c ReliabilityCollection) MergeInRange(other ReliabilityCollection, startAt, endAt time.Time) (ReliabilityCollection, error) {
 	if len(other) == 0 {
 		return c.Clone(), nil
 	}
@@ -196,9 +200,21 @@ func (c ReliabilityCollection) Merge(other ReliabilityCollection) (ReliabilityCo
 	}
 	reliabilityByCursorAt := make(map[time.Time]*Reliability, len(c))
 	for _, r := range c {
+		if r.TimeFrameStartAt().Before(startAt) {
+			continue
+		}
+		if r.TimeFrameStartAt().After(endAt) {
+			continue
+		}
 		reliabilityByCursorAt[r.CursorAt()] = r.Clone()
 	}
 	for _, r := range other {
+		if r.TimeFrameStartAt().Before(startAt) {
+			continue
+		}
+		if r.TimeFrameStartAt().After(endAt) {
+			continue
+		}
 		cursorAt := r.CursorAt()
 		if base, ok := reliabilityByCursorAt[cursorAt]; ok {
 			var err error
