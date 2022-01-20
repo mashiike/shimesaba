@@ -105,7 +105,7 @@ func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {
 	for _, m := range monitors {
 		for _, obj := range d.alertObjectives {
 			if obj.MatchMonitor(m) {
-				matched[m.ID] = m
+				matched[m.ID()] = m
 			}
 		}
 	}

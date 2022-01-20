@@ -28,8 +28,8 @@ func NewAlert(monitor *Monitor, openedAt time.Time, closedAt *time.Time) *Alert 
 
 func (alert *Alert) String() string {
 	return fmt.Sprintf("alert[%s:%s] %s ~ %s",
-		alert.Monitor.ID,
-		alert.Monitor.Name,
+		alert.Monitor.ID(),
+		alert.Monitor.Name(),
 		alert.OpenedAt,
 		alert.ClosedAt,
 	)

@@ -362,7 +362,7 @@ func (repo *Repository) getMonitor(id string) (*Monitor, error) {
 		return nil, err
 	}
 	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = newMonitor(monitor)
+	repo.monitorByID[id] = convertMonitor(monitor)
 	return repo.monitorByID[id], nil
 }
 
@@ -376,19 +376,19 @@ func (repo *Repository) FindMonitors() ([]*Monitor, error) {
 	}
 	ret := make([]*Monitor, 0, len(monitors))
 	for _, m := range monitors {
-		monitor := newMonitor(m)
-		repo.monitorByID[monitor.ID] = monitor
+		monitor := convertMonitor(m)
+		repo.monitorByID[monitor.ID()] = monitor
 		ret = append(ret, monitor)
 	}
 	return ret, nil
 }
 
-func newMonitor(monitor mackerel.Monitor) *Monitor {
-	return &Monitor{
-		ID:   monitor.MonitorID(),
-		Name: monitor.MonitorName(),
-		Type: monitor.MonitorType(),
-	}
+func convertMonitor(monitor mackerel.Monitor) *Monitor {
+	return NewMonitor(
+		monitor.MonitorID(),
+		monitor.MonitorName(),
+		monitor.MonitorType(),
+	)
 }
 
 func (repo *Repository) WithDryRun() *Repository {

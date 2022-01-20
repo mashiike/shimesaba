@@ -15,23 +15,29 @@ func TestAlerts(t *testing.T) {
 	defer restore()
 	alerts := shimesaba.Alerts{
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID: "hogera",
-			},
+			shimesaba.NewMonitor(
+				"hogera",
+				"hogera.example.com",
+				"external",
+			),
 			time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID: "fugara",
-			},
+			shimesaba.NewMonitor(
+				"fugara",
+				"fugara.example.com",
+				"external",
+			),
 			time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID: "fugara",
-			},
+			shimesaba.NewMonitor(
+				"fugara",
+				"fugara.example.com",
+				"external",
+			),
 			time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 		),
@@ -39,9 +45,11 @@ func TestAlerts(t *testing.T) {
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), alerts.StartAt())
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC), alerts.EndAt())
 	alerts = append(alerts, shimesaba.NewAlert(
-		&shimesaba.Monitor{
-			ID: "hogera",
-		},
+		shimesaba.NewMonitor(
+			"hogera",
+			"hogera.example.com",
+			"external",
+		),
 		time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
 		nil,
 	))
@@ -59,9 +67,11 @@ func TestAlertCalculateReliabilities(t *testing.T) {
 	}{
 		{
 			alert: shimesaba.NewAlert(
-				&shimesaba.Monitor{
-					ID: "fugara",
-				},
+				shimesaba.NewMonitor(
+					"fugara",
+					"fugara.example.com",
+					"external",
+				),
 				time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 				ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 			),
@@ -79,9 +89,11 @@ func TestAlertCalculateReliabilities(t *testing.T) {
 		},
 		{
 			alert: shimesaba.NewAlert(
-				&shimesaba.Monitor{
-					ID: "fugara",
-				},
+				shimesaba.NewMonitor(
+					"fugara",
+					"fugara.example.com",
+					"external",
+				),
 				time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 				ptrTime(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC)),
 			),
@@ -103,9 +115,11 @@ func TestAlertCalculateReliabilities(t *testing.T) {
 		},
 		{
 			alert: shimesaba.NewAlert(
-				&shimesaba.Monitor{
-					ID: "fugara",
-				},
+				shimesaba.NewMonitor(
+					"fugara",
+					"fugara.example.com",
+					"external",
+				),
 				time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 				nil,
 			),

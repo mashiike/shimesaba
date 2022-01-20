@@ -15,38 +15,38 @@ func TestAlertObjective(t *testing.T) {
 	defer restore()
 	alerts := shimesaba.Alerts{
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID:   "hogera",
-				Name: "SLO hoge",
-				Type: "expression",
-			},
+			shimesaba.NewMonitor(
+				"hogera",
+				"SLO hoge",
+				"expression",
+			),
 			time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID:   "fugara",
-				Name: "SLO fuga",
-				Type: "service",
-			},
+			shimesaba.NewMonitor(
+				"fugara",
+				"SLO fuga",
+				"service",
+			),
 			time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID:   "fugara",
-				Name: "SLO fuga",
-				Type: "service",
-			},
+			shimesaba.NewMonitor(
+				"fugara",
+				"SLO fuga",
+				"service",
+			),
 			time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID:   "hogera",
-				Name: "SLO hoge",
-				Type: "expression",
-			},
+			shimesaba.NewMonitor(
+				"hogera",
+				"SLO hoge",
+				"expression",
+			),
 			time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC),
 			nil,
 		),
