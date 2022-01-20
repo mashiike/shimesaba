@@ -2,6 +2,7 @@ package shimesaba
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/Songmu/flextime"
@@ -13,6 +14,9 @@ type Alert struct {
 	HostID   string
 	OpenedAt time.Time
 	ClosedAt *time.Time
+
+	mu    sync.Mutex
+	cache Reliabilities
 }
 
 func NewAlert(monitor *Monitor, openedAt time.Time, closedAt *time.Time) *Alert {
@@ -44,17 +48,42 @@ func (alert *Alert) String() string {
 	)
 }
 
+func (alert *Alert) endAt() time.Time {
+	if alert.ClosedAt != nil {
+		return *alert.ClosedAt
+	}
+	return flextime.Now().Add(time.Minute)
+}
+
 func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
+	alert.mu.Lock()
+	defer alert.mu.Unlock()
+	if alert.cache != nil {
+		return alert.cache, nil
+	}
+
+	if reliabilities, ok := alert.Monitor.EvaluateReliabilities(
+		alert.HostID,
+		timeFrame,
+		alert.OpenedAt.Add(-15*time.Minute),
+		alert.endAt(),
+	); ok {
+		alert.cache = reliabilities
+		return reliabilities, nil
+	}
+
 	isNoViolation, startAt, endAt := alert.newIsNoViolation()
-	return isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+	reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+	if err != nil {
+		return nil, err
+	}
+	alert.cache = reliabilities
+	return reliabilities, nil
 }
 
 func (alert *Alert) newIsNoViolation() (isNoViolation IsNoViolationCollection, startAt, endAt time.Time) {
 	startAt = alert.OpenedAt
-	endAt = flextime.Now().Add(time.Minute)
-	if alert.ClosedAt != nil {
-		endAt = *alert.ClosedAt
-	}
+	endAt = alert.endAt()
 
 	isNoViolation = make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
 	iter := timeutils.NewIterator(startAt, endAt, time.Minute)
