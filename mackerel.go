@@ -451,6 +451,66 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 			}
 			return reliabilities, true
 		})
+	case *mackerel.MonitorServiceMetric:
+		m = m.WithEvaluator(func(_ string, timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, bool) {
+			log.Printf("[debug] try evaluate service metric, service=%s monitor=`%s` time=%s~%s", monitor.Service, monitor.Name, startAt, endAt)
+			metrics, err := repo.client.FetchServiceMetricValues(monitor.Service, monitor.Metric, startAt.Unix(), endAt.Unix())
+			if err != nil {
+				log.Printf("[debug] FetchServiceMetricValues failed: %s", err)
+				log.Printf("[warn] monitor `%s`, can not get service metric = `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Metric)
+				return nil, false
+			}
+			isNoViolation := make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
+			for _, metric := range metrics {
+				cursorAt := time.Unix(metric.Time, 0).UTC()
+				value, ok := metric.Value.(float64)
+				if !ok {
+					continue
+				}
+				switch monitor.Operator {
+				case ">":
+					if monitor.Warning != nil {
+						if value > *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] > warning[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value > *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] > critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Critical)
+							continue
+						}
+					}
+				case "<":
+					if monitor.Warning != nil {
+						if value < *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < warning[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value < *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+				default:
+					log.Printf("[warn] monitor `%s`, unknown operator `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Operator)
+					return nil, false
+				}
+			}
+			reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+			if err != nil {
+				log.Printf("[debug] NewReliabilities failed: %s", err)
+				log.Printf("[warn] monitor `%s`, reliability reassessment based on metric is not enabled.", monitor.Name)
+				return nil, false
+			}
+			return reliabilities, true
+		})
 	}
 	return m
 }
