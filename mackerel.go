@@ -393,6 +393,7 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 	switch monitor := monitor.(type) {
 	case *mackerel.MonitorHostMetric:
 		m = m.WithEvaluator(func(hostID string, timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, bool) {
+			log.Printf("[debug] try evaluate host metric, host_id=`%s`, monitor=`%s` time=%s~%s", hostID, monitor.Name, startAt, endAt)
 			metrics, err := repo.client.FetchHostMetricValues(hostID, monitor.Metric, startAt.Unix(), endAt.Unix())
 			if err != nil {
 				log.Printf("[debug] FetchHostMetricValues failed: %s", err)
@@ -411,12 +412,14 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 					if monitor.Warning != nil {
 						if value > *monitor.Warning {
 							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, host_id=`%s`, time=`%s`,  value[%f] > warning[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
 							continue
 						}
 					}
 					if monitor.Critical != nil {
 						if value > *monitor.Critical {
 							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] > critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Critical)
 							continue
 						}
 					}
@@ -424,12 +427,14 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 					if monitor.Warning != nil {
 						if value < *monitor.Warning {
 							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < warning[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
 							continue
 						}
 					}
 					if monitor.Critical != nil {
 						if value < *monitor.Critical {
 							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
 							continue
 						}
 					}
