@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/mashiike/evaluator"
-	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
 type ExprObjective struct {
@@ -18,14 +17,7 @@ func NewExprObjective(expr evaluator.Comparator) *ExprObjective {
 
 func (o *ExprObjective) EvaluateReliabilities(timeFrame time.Duration, metrics Metrics, startAt, endAt time.Time) (Reliabilities, error) {
 	isNoViolation := o.newIsNoViolation(metrics)
-	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
-	iter.SetEnableOverWindow(true)
-	reliabilitySlice := make([]*Reliability, 0)
-	for iter.HasNext() {
-		cursorAt, _ := iter.Next()
-		reliabilitySlice = append(reliabilitySlice, NewReliability(cursorAt, timeFrame, isNoViolation))
-	}
-	return NewReliabilities(reliabilitySlice)
+	return isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
 }
 
 func (o *ExprObjective) newIsNoViolation(metrics Metrics) IsNoViolationCollection {
