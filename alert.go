@@ -2,6 +2,8 @@ package shimesaba
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -56,20 +58,23 @@ func (alert *Alert) endAt() time.Time {
 }
 
 func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
+	log.Printf("[debug] EvaluateReliabilities alert=%s", alert)
 	alert.mu.Lock()
 	defer alert.mu.Unlock()
 	if alert.cache != nil {
+		log.Printf("[debug] return cache alert=%s", alert)
 		return alert.cache, nil
 	}
-
-	if reliabilities, ok := alert.Monitor.EvaluateReliabilities(
-		alert.HostID,
-		timeFrame,
-		alert.OpenedAt.Add(-15*time.Minute),
-		alert.endAt(),
-	); ok {
-		alert.cache = reliabilities
-		return reliabilities, nil
+	if os.Getenv("SHIMESABA_ENABLE_REASSESSMENT") != "" {
+		if reliabilities, ok := alert.Monitor.EvaluateReliabilities(
+			alert.HostID,
+			timeFrame,
+			alert.OpenedAt.Add(-15*time.Minute),
+			alert.endAt(),
+		); ok {
+			alert.cache = reliabilities
+			return reliabilities, nil
+		}
 	}
 
 	isNoViolation, startAt, endAt := alert.newIsNoViolation()
