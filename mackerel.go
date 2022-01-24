@@ -343,7 +343,7 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 			openedAt,
 			closedAt,
 		)
-		a = a.WithHostID(alert.HostID)
+		a = a.WithHostID(alert.HostID).WithReason(alert.Reason)
 		log.Printf("[debug] %s", a)
 		alerts = append(alerts, a)
 	}
