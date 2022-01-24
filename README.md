@@ -135,6 +135,13 @@ For example, if id is `latency` in the above configuration, the following servic
 - `api.failure_time.latency`: Time of SLO violation within the rolling window time frame (unit:minutes)
 - `api.uptime.latency`: Time that can be treated as normal operation within the time frame of the rolling window (unit:minutes)  
 
+### Manual correction feature
+
+If you enter `downtime:3m` or similar in the reason for closing an alert, the alert will be calculated as if the SLO had been violated for 3 minutes from the time it was opened.
+
+The description "3m" can be any time like `1h`, `40m`, `1h50m`, etc. as well as other settings.
+When combined with other statements, half-width spaces are required before and after the above keywords.
+
 ### Environment variable `SSMWRAP_PATHS`
 
 It incorporates [github.com/handlename/ssmwrap](https://github.com/handlename/ssmwrap) for parameter management.  
