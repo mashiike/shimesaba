@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +17,7 @@ type Alert struct {
 	HostID   string
 	OpenedAt time.Time
 	ClosedAt *time.Time
+	Reason   string
 
 	mu    sync.Mutex
 	cache Reliabilities
@@ -38,6 +40,17 @@ func (alert *Alert) WithHostID(hostID string) *Alert {
 		OpenedAt: alert.OpenedAt,
 		ClosedAt: alert.ClosedAt,
 		HostID:   hostID,
+		Reason:   alert.Reason,
+	}
+}
+
+func (alert *Alert) WithReason(reason string) *Alert {
+	return &Alert{
+		Monitor:  alert.Monitor,
+		OpenedAt: alert.OpenedAt,
+		ClosedAt: alert.ClosedAt,
+		HostID:   alert.HostID,
+		Reason:   reason,
 	}
 }
 
@@ -72,18 +85,53 @@ func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilitie
 			alert.OpenedAt.Add(-15*time.Minute),
 			alert.endAt(),
 		); ok {
+			log.Printf("[notice] applying SLO reassessment as an experimental feature for Monitor %s.", alert.Monitor.name)
 			alert.cache = reliabilities
 			return reliabilities, nil
 		}
 	}
+	var startAt, endAt time.Time
+	var isNoViolation IsNoViolationCollection
+	if correctionTime, ok := alert.CorrectionTime(); ok {
+		log.Printf("[notice] applying SLO Violation time %s, to %s", correctionTime, alert.Monitor.name)
+		startAt = alert.OpenedAt
+		endAt = alert.endAt()
+		isNoViolation = make(IsNoViolationCollection, correctionTime/time.Minute)
+		iter := timeutils.NewIterator(startAt, alert.OpenedAt.Add(correctionTime), time.Minute)
+		for iter.HasNext() {
+			t, _ := iter.Next()
+			isNoViolation[t] = false
+		}
+	} else {
+		isNoViolation, startAt, endAt = alert.newIsNoViolation()
+	}
 
-	isNoViolation, startAt, endAt := alert.newIsNoViolation()
 	reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
 	if err != nil {
 		return nil, err
 	}
 	alert.cache = reliabilities
 	return reliabilities, nil
+}
+
+const correctionKeyword = "downtime:"
+
+func (alert *Alert) CorrectionTime() (time.Duration, bool) {
+	i := strings.Index(alert.Reason, correctionKeyword)
+	if i < 0 {
+		return 0, false
+	}
+	str := alert.Reason[i+len(correctionKeyword):]
+	j := strings.IndexRune(str, ' ')
+	if j >= 0 {
+		str = str[:j]
+	}
+	d, err := timeutils.ParseDuration(str)
+	if err != nil {
+		log.Printf("[debug] try parse correction time failed:%s", err)
+		return 0, false
+	}
+	return d, true
 }
 
 func (alert *Alert) newIsNoViolation() (isNoViolation IsNoViolationCollection, startAt, endAt time.Time) {
