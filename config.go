@@ -505,6 +505,9 @@ func (c *Config) Restrict() error {
 	if err := c.Definitions.Restrict(); err != nil {
 		return fmt.Errorf("definitions has invalid: %w", err)
 	}
+	if c.Dashboard != "" {
+		log.Printf("[warn] Use of the dashboard management feature is deprecated; we plan to remove this feature after v0.8.0.")
+	}
 
 	return nil
 }
