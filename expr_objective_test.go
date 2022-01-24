@@ -85,7 +85,6 @@ func TestExprObjective(t *testing.T) {
 			require.NoError(t, err)
 			expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
 				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 1, 0, 0, time.UTC), time.Minute, c.expected),
-				shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC), time.Minute, c.expected),
 			})
 			require.EqualValues(t, expected, actual)
 		})
