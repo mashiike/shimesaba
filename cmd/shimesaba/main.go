@@ -19,8 +19,10 @@ import (
 )
 
 var (
-	Version    = "current"
-	ssmwrapErr error
+	Version        = "current"
+	ssmwrapErr     error
+	legacyDryRun   bool
+	legacyBackfill int
 )
 
 func main() {
@@ -54,42 +56,42 @@ func main() {
 				Usage:   "output debug log",
 				EnvVars: []string{"SHIMESABA_DEBUG"},
 			},
+			&cli.BoolFlag{
+				Name:    "dry-run",
+				Usage:   "report output stdout and not put mackerel",
+				EnvVars: []string{"SHIMESABA_DRY_RUN"},
+			},
+			&cli.IntFlag{
+				Name:        "backfill",
+				DefaultText: "3",
+				Value:       3,
+				Usage:       "generate report before n point",
+				EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+			},
 		},
+		Action: run,
 		Commands: []*cli.Command{
 			{
 				Name:      "run",
 				Usage:     "run shimesaba. this is main feature",
 				UsageText: "shimesaba -config <config file> run [command options]",
 				Action: func(c *cli.Context) error {
-					app, err := buildApp(c)
-					if err != nil {
-						return err
-					}
-					optFns := []func(*shimesaba.Options){
-						shimesaba.DryRunOption(c.Bool("dry-run")),
-						shimesaba.BackfillOption(c.Int("backfill")),
-					}
-					handler := func(ctx context.Context) error {
-						return app.Run(ctx, optFns...)
-					}
-					if isLambda() {
-						lambda.Start(handler)
-						return nil
-					}
-					return handler(c.Context)
+					log.Println("[warn] subcommand `run` is deprecated. no use subcommand.")
+					return run(c)
 				},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
-						Name:    "dry-run",
-						Usage:   "report output stdout and not put mackerel",
-						EnvVars: []string{"SHIMESABA_DRY_RUN"},
+						Name:        "dry-run",
+						Usage:       "report output stdout and not put mackerel",
+						EnvVars:     []string{"SHIMESABA_DRY_RUN"},
+						Destination: &legacyDryRun,
 					},
 					&cli.IntFlag{
 						Name:        "backfill",
 						DefaultText: "3",
-						Value:       3,
 						Usage:       "generate report before n point",
 						EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+						Destination: &legacyBackfill,
 					},
 				},
 			},
@@ -102,6 +104,7 @@ func main() {
 						Usage:     "import an existing mackerel dashboard",
 						UsageText: "shimesaba dashboard [global options] init <dashboard_id or dashboard_url_path>",
 						Action: func(c *cli.Context) error {
+							log.Println("[warn] subcommand `dashboard init` is deprecated.")
 							if c.NArg() < 1 {
 								cli.ShowAppHelp(c)
 								return errors.New("dashboard_id is required")
@@ -118,6 +121,7 @@ func main() {
 						Usage:     "create or update mackerel dashboard",
 						UsageText: "shimesaba dashboard [global options] build",
 						Action: func(c *cli.Context) error {
+							log.Println("[warn] subcommand `dashboard build` is deprecated.")
 							app, err := buildApp(c)
 							if err != nil {
 								return err
@@ -178,4 +182,27 @@ func buildApp(c *cli.Context) (*shimesaba.App, error) {
 		return nil, err
 	}
 	return shimesaba.New(c.String("mackerel-apikey"), cfg)
+}
+
+func run(c *cli.Context) error {
+	app, err := buildApp(c)
+	if err != nil {
+		return err
+	}
+	backfill := c.Int("backfill")
+	if legacyBackfill > 0 {
+		backfill = legacyBackfill
+	}
+	optFns := []func(*shimesaba.Options){
+		shimesaba.DryRunOption(c.Bool("dry-run") || legacyDryRun),
+		shimesaba.BackfillOption(backfill),
+	}
+	handler := func(ctx context.Context) error {
+		return app.Run(ctx, optFns...)
+	}
+	if isLambda() {
+		lambda.Start(handler)
+		return nil
+	}
+	return handler(c.Context)
 }
