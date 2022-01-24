@@ -112,6 +112,12 @@ func newMockMackerelClient(t *testing.T) *mockMackerelClient {
 	}
 }
 
+func (m *mockMackerelClient) GetOrg() (*mackerel.Org, error) {
+	return &mackerel.Org{
+		Name: "dummy",
+	}, nil
+}
+
 func (m *mockMackerelClient) FindHosts(param *mackerel.FindHostsParam) ([]*mackerel.Host, error) {
 	require.EqualValues(
 		m.t,

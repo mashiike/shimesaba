@@ -18,6 +18,7 @@ import (
 
 // MackerelClient is an abstraction interface for mackerel-client-go.Client
 type MackerelClient interface {
+	GetOrg() (*mackerel.Org, error)
 	FindHosts(param *mackerel.FindHostsParam) ([]*mackerel.Host, error)
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
@@ -48,6 +49,14 @@ func NewRepository(client MackerelClient) *Repository {
 		client:      client,
 		monitorByID: make(map[string]*Monitor),
 	}
+}
+
+func (repo *Repository) GetOrgName(ctx context.Context) (string, error) {
+	org, err := repo.client.GetOrg()
+	if err != nil {
+		return "", err
+	}
+	return org.Name, nil
 }
 
 const (
