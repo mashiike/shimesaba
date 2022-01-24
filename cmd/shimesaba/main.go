@@ -35,8 +35,9 @@ func main() {
 		})
 	}
 	cliApp := &cli.App{
-		Name:  "shimesaba",
-		Usage: "A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.",
+		Name:      "shimesaba",
+		Usage:     "A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.",
+		UsageText: "shimesaba -config <config file> [command options]",
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:    "config",
@@ -73,7 +74,7 @@ func main() {
 		Commands: []*cli.Command{
 			{
 				Name:      "run",
-				Usage:     "run shimesaba. this is main feature",
+				Usage:     "run shimesaba. this is main feature (deprecated), use no subcommand",
 				UsageText: "shimesaba -config <config file> run [command options]",
 				Action: func(c *cli.Context) error {
 					log.Println("[warn] subcommand `run` is deprecated. no use subcommand.")
@@ -97,11 +98,11 @@ func main() {
 			},
 			{
 				Name:  "dashboard",
-				Usage: "manage mackerel dashboard for SLI/SLO",
+				Usage: "manage mackerel dashboard for SLI/SLO (deprecated)",
 				Subcommands: []*cli.Command{
 					{
 						Name:      "init",
-						Usage:     "import an existing mackerel dashboard",
+						Usage:     "import an existing mackerel dashboard (deprecated)",
 						UsageText: "shimesaba dashboard [global options] init <dashboard_id or dashboard_url_path>",
 						Action: func(c *cli.Context) error {
 							log.Println("[warn] subcommand `dashboard init` is deprecated.")
@@ -118,7 +119,7 @@ func main() {
 					},
 					{
 						Name:      "build",
-						Usage:     "create or update mackerel dashboard",
+						Usage:     "create or update mackerel dashboard (deprecated)",
 						UsageText: "shimesaba dashboard [global options] build",
 						Action: func(c *cli.Context) error {
 							log.Println("[warn] subcommand `dashboard build` is deprecated.")
