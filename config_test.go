@@ -35,6 +35,10 @@ func TestConfigLoadNoError(t *testing.T) {
 			casename: "sample_config",
 			paths:    []string{"testdata/sample.yaml"},
 		},
+		{
+			casename: "v0.7.0 over",
+			paths:    []string{"testdata/v0.7.0.yaml"},
+		},
 	}
 
 	for _, c := range cases {
