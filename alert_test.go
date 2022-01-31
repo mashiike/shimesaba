@@ -176,6 +176,26 @@ func TestAlertEvaluateReliabilities(t *testing.T) {
 				shimesaba.NewMonitor(
 					"fugara",
 					"fugara.example.com",
+					"external",
+				),
+				time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
+				ptrTime(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC)),
+			).WithReason("downtime:0m"),
+			timeFrame: 5 * time.Minute,
+			expectedGenerator: func() shimesaba.Reliabilities {
+				isNoViolation := map[time.Time]bool{}
+				expected, _ := shimesaba.NewReliabilities([]*shimesaba.Reliability{
+					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), 5*time.Minute, isNoViolation),
+					shimesaba.NewReliability(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC), 5*time.Minute, isNoViolation),
+				})
+				return expected
+			},
+		},
+		{
+			alert: shimesaba.NewAlert(
+				shimesaba.NewMonitor(
+					"fugara",
+					"fugara.example.com",
 					"service",
 				).WithEvaluator(func(hostID string, timeFrame time.Duration, startAt, endAt time.Time) (shimesaba.Reliabilities, bool) {
 					isNoViolation := map[time.Time]bool{
