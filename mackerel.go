@@ -18,6 +18,7 @@ import (
 
 // MackerelClient is an abstraction interface for mackerel-client-go.Client
 type MackerelClient interface {
+	GetOrg() (*mackerel.Org, error)
 	FindHosts(param *mackerel.FindHostsParam) ([]*mackerel.Host, error)
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
@@ -48,6 +49,14 @@ func NewRepository(client MackerelClient) *Repository {
 		client:      client,
 		monitorByID: make(map[string]*Monitor),
 	}
+}
+
+func (repo *Repository) GetOrgName(ctx context.Context) (string, error) {
+	org, err := repo.client.GetOrg()
+	if err != nil {
+		return "", err
+	}
+	return org.Name, nil
 }
 
 const (
@@ -338,13 +347,14 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time
 		if err != nil {
 			return nil, err
 		}
-		alert := NewAlert(
+		a := NewAlert(
 			monitor,
 			openedAt,
 			closedAt,
 		)
-		log.Printf("[debug] %s", alert)
-		alerts = append(alerts, alert)
+		a = a.WithHostID(alert.HostID).WithReason(alert.Reason)
+		log.Printf("[debug] %s", a)
+		alerts = append(alerts, a)
 	}
 	return alerts, nil
 }
@@ -362,7 +372,7 @@ func (repo *Repository) getMonitor(id string) (*Monitor, error) {
 		return nil, err
 	}
 	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = newMonitor(monitor)
+	repo.monitorByID[id] = repo.convertMonitor(monitor)
 	return repo.monitorByID[id], nil
 }
 
@@ -376,19 +386,142 @@ func (repo *Repository) FindMonitors() ([]*Monitor, error) {
 	}
 	ret := make([]*Monitor, 0, len(monitors))
 	for _, m := range monitors {
-		monitor := newMonitor(m)
-		repo.monitorByID[monitor.ID] = monitor
+		monitor := repo.convertMonitor(m)
+		repo.monitorByID[monitor.ID()] = monitor
 		ret = append(ret, monitor)
 	}
 	return ret, nil
 }
 
-func newMonitor(monitor mackerel.Monitor) *Monitor {
-	return &Monitor{
-		ID:   monitor.MonitorID(),
-		Name: monitor.MonitorName(),
-		Type: monitor.MonitorType(),
+func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
+	m := NewMonitor(
+		monitor.MonitorID(),
+		monitor.MonitorName(),
+		monitor.MonitorType(),
+	)
+	switch monitor := monitor.(type) {
+	case *mackerel.MonitorHostMetric:
+		m = m.WithEvaluator(func(hostID string, timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, bool) {
+			log.Printf("[debug] try evaluate host metric, host_id=`%s`, monitor=`%s` time=%s~%s", hostID, monitor.Name, startAt, endAt)
+			metrics, err := repo.client.FetchHostMetricValues(hostID, monitor.Metric, startAt.Unix(), endAt.Unix())
+			if err != nil {
+				log.Printf("[debug] FetchHostMetricValues failed: %s", err)
+				log.Printf("[warn] monitor `%s`, can not get host metric = `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Metric)
+				return nil, false
+			}
+			isNoViolation := make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
+			for _, metric := range metrics {
+				cursorAt := time.Unix(metric.Time, 0).UTC()
+				value, ok := metric.Value.(float64)
+				if !ok {
+					continue
+				}
+				switch monitor.Operator {
+				case ">":
+					if monitor.Warning != nil {
+						if value > *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, host_id=`%s`, time=`%s`,  value[%f] > warning[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value > *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] > critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Critical)
+							continue
+						}
+					}
+				case "<":
+					if monitor.Warning != nil {
+						if value < *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < warning[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value < *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+				default:
+					log.Printf("[warn] monitor `%s`, unknown operator `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Operator)
+					return nil, false
+				}
+			}
+			reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+			if err != nil {
+				log.Printf("[debug] NewReliabilities failed: %s", err)
+				log.Printf("[warn] monitor `%s`, reliability reassessment based on metric is not enabled.", monitor.Name)
+				return nil, false
+			}
+			return reliabilities, true
+		})
+	case *mackerel.MonitorServiceMetric:
+		m = m.WithEvaluator(func(_ string, timeFrame time.Duration, startAt, endAt time.Time) (Reliabilities, bool) {
+			log.Printf("[debug] try evaluate service metric, service=%s monitor=`%s` time=%s~%s", monitor.Service, monitor.Name, startAt, endAt)
+			metrics, err := repo.client.FetchServiceMetricValues(monitor.Service, monitor.Metric, startAt.Unix(), endAt.Unix())
+			if err != nil {
+				log.Printf("[debug] FetchServiceMetricValues failed: %s", err)
+				log.Printf("[warn] monitor `%s`, can not get service metric = `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Metric)
+				return nil, false
+			}
+			isNoViolation := make(IsNoViolationCollection, endAt.Sub(startAt)/time.Minute)
+			for _, metric := range metrics {
+				cursorAt := time.Unix(metric.Time, 0).UTC()
+				value, ok := metric.Value.(float64)
+				if !ok {
+					continue
+				}
+				switch monitor.Operator {
+				case ">":
+					if monitor.Warning != nil {
+						if value > *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] > warning[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value > *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] > critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Critical)
+							continue
+						}
+					}
+				case "<":
+					if monitor.Warning != nil {
+						if value < *monitor.Warning {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < warning[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+					if monitor.Critical != nil {
+						if value < *monitor.Critical {
+							isNoViolation[cursorAt] = false
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							continue
+						}
+					}
+				default:
+					log.Printf("[warn] monitor `%s`, unknown operator `%s`, reliability reassessment based on metric is not enabled.", monitor.Name, monitor.Operator)
+					return nil, false
+				}
+			}
+			reliabilities, err := isNoViolation.NewReliabilities(timeFrame, startAt, endAt)
+			if err != nil {
+				log.Printf("[debug] NewReliabilities failed: %s", err)
+				log.Printf("[warn] monitor `%s`, reliability reassessment based on metric is not enabled.", monitor.Name)
+				return nil, false
+			}
+			return reliabilities, true
+		})
 	}
+	return m
 }
 
 func (repo *Repository) WithDryRun() *Repository {

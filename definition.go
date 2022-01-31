@@ -58,33 +58,33 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.timeFrame, d.calculate)
-	var reliabilityCollection ReliabilityCollection
+	var Reliabilities Reliabilities
 	log.Printf("[debug] expr objective count = %d", len(d.exprObjectives))
 	for _, o := range d.exprObjectives {
-		rc, err := o.NewReliabilityCollection(d.calculate, metrics, startAt, endAt)
+		rc, err := o.EvaluateReliabilities(d.calculate, metrics, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}
-		reliabilityCollection, err = reliabilityCollection.Merge(rc)
+		Reliabilities, err = Reliabilities.Merge(rc)
 		if err != nil {
 			return nil, err
 		}
 	}
 	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
 	for _, o := range d.alertObjectives {
-		rc, err := o.NewReliabilityCollection(d.calculate, alerts, startAt, endAt)
+		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {
 			return nil, err
 		}
-		reliabilityCollection, err = reliabilityCollection.Merge(rc)
+		Reliabilities, err = Reliabilities.Merge(rc)
 		if err != nil {
 			return nil, err
 		}
 	}
-	for _, r := range reliabilityCollection {
+	for _, r := range Reliabilities {
 		log.Printf("[debug] reliability[%s~%s] =  (%s, %s)", r.TimeFrameStartAt(), r.TimeFrameEndAt(), r.UpTime(), r.FailureTime())
 	}
-	reports := NewReports(d.id, d.destination, d.errorBudgetSize, d.timeFrame, reliabilityCollection)
+	reports := NewReports(d.id, d.destination, d.errorBudgetSize, d.timeFrame, Reliabilities)
 	sort.Slice(reports, func(i, j int) bool {
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})
@@ -105,7 +105,7 @@ func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {
 	for _, m := range monitors {
 		for _, obj := range d.alertObjectives {
 			if obj.MatchMonitor(m) {
-				matched[m.ID] = m
+				matched[m.ID()] = m
 			}
 		}
 	}

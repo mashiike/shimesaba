@@ -314,27 +314,36 @@ func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
 
 // Objective Config is a SLO setting
 type ObjectiveConfig struct {
-	Expr  string                `yaml:"expr" json:"expr"`
-	Alert *AlertObjectiveConfig `yaml:"alert" json:"alert"`
+	Expr                 string                `yaml:"expr" json:"expr"`
+	Alert                *AlertObjectiveConfig `yaml:"alert" json:"alert"`
+	AlertObjectiveConfig `yaml:",inline"`
 
 	comparator evaluator.Comparator
 }
 
 // Restrict restricts a configuration.
 func (c *ObjectiveConfig) Restrict() error {
+	globalErr := c.AlertObjectiveConfig.Restrict()
+	if globalErr == nil {
+		c.Alert = &c.AlertObjectiveConfig
+		return nil
+	}
+	log.Println("[warn] this objective config is deprecated and will not be available starting from v0.8.0.")
 	if c.Expr == "" && c.Alert == nil {
-		return errors.New("either expr or alert is required")
+		return errors.New("alert config is required")
 	}
 	if c.Expr != "" && c.Alert != nil {
 		return errors.New("only one of expr or alert can be set")
 	}
 	if c.Expr != "" {
+		log.Println("[warn] the Objective feature with `expr` will not be available after v0.8.0, please set up an equivalent monitor on Mackerel to use the Objective feature with alerts.")
 		return c.buildComparator()
 	}
 	if c.Alert != nil {
+		log.Println("[warn] Since v0.8.0, the `expr` objective feature will be removed, so the key `alert` will no longer be needed.")
 		return c.Alert.Restrict()
 	}
-	return errors.New("unexpected config")
+	return globalErr
 }
 
 func (c *ObjectiveConfig) buildComparator() error {
@@ -476,10 +485,12 @@ func (c *Config) Restrict() error {
 		}
 		c.versionConstraints = constraints
 	}
-	if err := c.Metrics.Restrict(); err != nil {
-		return fmt.Errorf("metrics has invalid: %w", err)
+	if len(c.Metrics) > 0 {
+		log.Println("[warn] Since v0.8.0, the setting `metrics` is no longer necessary because the expr function will be removed. This setting is deprecated.")
+		if err := c.Metrics.Restrict(); err != nil {
+			return fmt.Errorf("metrics has invalid: %w", err)
+		}
 	}
-
 	for id, cfg := range c.Definitions {
 		base := &DefinitionConfig{
 			TimeFrame:         c.TimeFrame,
@@ -493,6 +504,9 @@ func (c *Config) Restrict() error {
 	}
 	if err := c.Definitions.Restrict(); err != nil {
 		return fmt.Errorf("definitions has invalid: %w", err)
+	}
+	if c.Dashboard != "" {
+		log.Printf("[warn] Use of the dashboard management feature is deprecated; we plan to remove this feature after v0.8.0.")
 	}
 
 	return nil

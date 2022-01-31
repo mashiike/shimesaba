@@ -65,16 +65,20 @@ func TestDefinition(t *testing.T) {
 	defer restore()
 	alerts := shimesaba.Alerts{
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID: "hogera",
-			},
+			shimesaba.NewMonitor(
+				"hogera",
+				"hogera.example.com",
+				"external",
+			),
 			time.Date(2021, 10, 1, 0, 3, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, 10, 1, 0, 9, 0, 0, time.UTC)),
 		),
 		shimesaba.NewAlert(
-			&shimesaba.Monitor{
-				ID: "hogera",
-			},
+			shimesaba.NewMonitor(
+				"hogera",
+				"hogera.example.com",
+				"external",
+			),
 			time.Date(2021, 10, 1, 0, 15, 0, 0, time.UTC),
 			nil,
 		),

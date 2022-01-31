@@ -71,7 +71,7 @@ func TestReliabilityMerge(t *testing.T) {
 	require.True(t, actual.UpTime()+actual.FailureTime() == actual.TimeFrame(), "upTime + failureTime = timeFrame")
 }
 
-func TestReliabilityCollection(t *testing.T) {
+func TestReliabilities(t *testing.T) {
 	allTimeIsNoViolation := map[time.Time]bool{
 
 		time.Date(2022, 1, 6, 8, 28, 0, 0, time.UTC): true,
@@ -91,7 +91,7 @@ func TestReliabilityCollection(t *testing.T) {
 		time.Date(2022, 1, 6, 10, 40, 0, 0, time.UTC): false,
 	}
 	tumblingWindowTimeFrame := time.Hour
-	c, err := shimesaba.NewReliabilityCollection(
+	c, err := shimesaba.NewReliabilities(
 		[]*shimesaba.Reliability{
 			shimesaba.NewReliability(
 				time.Date(2022, 1, 6, 9, 0, 0, 0, time.UTC),
@@ -126,7 +126,7 @@ func TestReliabilityCollection(t *testing.T) {
 	require.EqualValues(t, 2*time.Minute, deltaFailureTime, "2nd deltaFailureTime")
 }
 
-func TestReliabilityCollectionMerge(t *testing.T) {
+func TestReliabilitiesMerge(t *testing.T) {
 
 	tumblingWindowTimeFrame := time.Hour
 	baseAllTimeIsNoViolation := map[time.Time]bool{
@@ -147,7 +147,7 @@ func TestReliabilityCollectionMerge(t *testing.T) {
 		time.Date(2022, 1, 6, 10, 39, 0, 0, time.UTC): false,
 		time.Date(2022, 1, 6, 10, 40, 0, 0, time.UTC): false,
 	}
-	base, err := shimesaba.NewReliabilityCollection(
+	base, err := shimesaba.NewReliabilities(
 		[]*shimesaba.Reliability{
 			shimesaba.NewReliability(
 				time.Date(2022, 1, 6, 9, 0, 0, 0, time.UTC),
@@ -185,7 +185,7 @@ func TestReliabilityCollectionMerge(t *testing.T) {
 		time.Date(2022, 1, 6, 10, 2, 0, 0, time.UTC): false,
 		time.Date(2022, 1, 6, 10, 3, 0, 0, time.UTC): false,
 	}
-	other, err := shimesaba.NewReliabilityCollection(
+	other, err := shimesaba.NewReliabilities(
 		[]*shimesaba.Reliability{
 			shimesaba.NewReliability(
 				time.Date(2022, 1, 6, 7, 0, 0, 0, time.UTC),

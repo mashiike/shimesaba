@@ -43,7 +43,11 @@ func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 
 //Run performs the calculation of the error bar calculation
 func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
-	log.Printf("[info] start run")
+	orgName, err := app.repo.GetOrgName(ctx)
+	if err != nil {
+		return err
+	}
+	log.Printf("[info] start run in the `%s` organization.", orgName)
 	opts := &Options{
 		backfill: 3,
 		dryRun:   false,
@@ -54,7 +58,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 
 	repo := app.repo
 	if opts.dryRun {
-		log.Println("[warn] **with dry run**")
+		log.Println("[notice] **with dry run**")
 		repo = repo.WithDryRun()
 	}
 

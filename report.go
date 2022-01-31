@@ -32,7 +32,7 @@ func NewReport(definitionID string, destination *Destination, cursorAt time.Time
 	return report
 }
 
-func NewReports(definitionID string, destination *Destination, errorBudgetSize float64, timeFrame time.Duration, reliability ReliabilityCollection) []*Report {
+func NewReports(definitionID string, destination *Destination, errorBudgetSize float64, timeFrame time.Duration, reliability Reliabilities) []*Report {
 	if reliability.Len() == 0 {
 		return make([]*Report, 0)
 	}
