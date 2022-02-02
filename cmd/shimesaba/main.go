@@ -89,10 +89,9 @@ func main() {
 						EnvVars: []string{"SHIMESABA_DRY_RUN"},
 					},
 					&cli.IntFlag{
-						Name:        "backfill",
-						DefaultText: "3",
-						Usage:       "generate report before n point",
-						EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+						Name:    "backfill",
+						Usage:   "generate report before n point",
+						EnvVars: []string{"BACKFILL", "SHIMESABA_BACKFILL"},
 					},
 				},
 			},
