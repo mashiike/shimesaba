@@ -21,8 +21,8 @@ import (
 var (
 	Version        = "current"
 	ssmwrapErr     error
-	legacyDryRun   bool
-	legacyBackfill int
+	globalDryRun   bool
+	globalBackfill int
 )
 
 func main() {
@@ -58,9 +58,10 @@ func main() {
 				EnvVars: []string{"SHIMESABA_DEBUG"},
 			},
 			&cli.BoolFlag{
-				Name:    "dry-run",
-				Usage:   "report output stdout and not put mackerel",
-				EnvVars: []string{"SHIMESABA_DRY_RUN"},
+				Name:        "dry-run",
+				Usage:       "report output stdout and not put mackerel",
+				EnvVars:     []string{"SHIMESABA_DRY_RUN"},
+				Destination: &globalDryRun,
 			},
 			&cli.IntFlag{
 				Name:        "backfill",
@@ -68,6 +69,7 @@ func main() {
 				Value:       3,
 				Usage:       "generate report before n point",
 				EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+				Destination: &globalBackfill,
 			},
 		},
 		Action: run,
@@ -82,17 +84,15 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
-						Name:        "dry-run",
-						Usage:       "report output stdout and not put mackerel",
-						EnvVars:     []string{"SHIMESABA_DRY_RUN"},
-						Destination: &legacyDryRun,
+						Name:    "dry-run",
+						Usage:   "report output stdout and not put mackerel",
+						EnvVars: []string{"SHIMESABA_DRY_RUN"},
 					},
 					&cli.IntFlag{
 						Name:        "backfill",
 						DefaultText: "3",
 						Usage:       "generate report before n point",
 						EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
-						Destination: &legacyBackfill,
 					},
 				},
 			},
@@ -190,12 +190,12 @@ func run(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	backfill := c.Int("backfill")
-	if legacyBackfill > 0 {
-		backfill = legacyBackfill
+	backfill := globalBackfill
+	if c.Int("backfill") > 0 {
+		backfill = c.Int("backfill")
 	}
 	optFns := []func(*shimesaba.Options){
-		shimesaba.DryRunOption(c.Bool("dry-run") || legacyDryRun),
+		shimesaba.DryRunOption(c.Bool("dry-run") || globalDryRun),
 		shimesaba.BackfillOption(backfill),
 	}
 	handler := func(ctx context.Context) error {
