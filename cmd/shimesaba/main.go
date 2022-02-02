@@ -84,15 +84,12 @@ func main() {
 				},
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
-						Name:    "dry-run",
-						Usage:   "report output stdout and not put mackerel",
-						EnvVars: []string{"SHIMESABA_DRY_RUN"},
+						Name:  "dry-run",
+						Usage: "report output stdout and not put mackerel",
 					},
 					&cli.IntFlag{
-						Name:        "backfill",
-						DefaultText: "3",
-						Usage:       "generate report before n point",
-						EnvVars:     []string{"BACKFILL", "SHIMESABA_BACKFILL"},
+						Name:  "backfill",
+						Usage: "generate report before n point",
 					},
 				},
 			},
@@ -131,9 +128,8 @@ func main() {
 						},
 						Flags: []cli.Flag{
 							&cli.BoolFlag{
-								Name:    "dry-run",
-								Usage:   "dry run",
-								EnvVars: []string{"SHIMESABA_DRY_RUN"},
+								Name:  "dry-run",
+								Usage: "dry run",
 							},
 						},
 					},
