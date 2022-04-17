@@ -52,7 +52,7 @@ type AlertBasedSLIConfig struct {
 	MonitorNamePrefix string `json:"monitor_name_prefix,omitempty" yaml:"monitor_name_prefix,omitempty"`
 	MonitorNameSuffix string `json:"monitor_name_suffix,omitempty" yaml:"monitor_name_suffix,omitempty"`
 	MonitorType       string `json:"monitor_type,omitempty" yaml:"monitor_type,omitempty"`
-	Reassessment      bool   `json:"reassessment,omitempty" yaml:"reassessment,omitempty"`
+	TryReassessment   bool   `json:"try_reassessment,omitempty" yaml:"try_reassessment,omitempty"`
 }
 
 const (
