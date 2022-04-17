@@ -1,6 +1,6 @@
 module github.com/mashiike/shimesaba
 
-go 1.17
+go 1.18
 
 require (
 	github.com/Songmu/flextime v0.1.0
@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/BurntSushi/toml v1.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.30.19 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -29,10 +29,10 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/sys v0.0.0-20211025201205-69cdffdb9359 // indirect
-	golang.org/x/tools v0.1.7 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
+	golang.org/x/tools v0.1.10 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
-	sigs.k8s.io/yaml v1.1.0 // indirect
+	sigs.k8s.io/yaml v1.3.0 // indirect
 )
