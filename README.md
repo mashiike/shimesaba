@@ -8,10 +8,8 @@ For SRE to operate and monitor services using Mackerel.
 
 shimesaba is a tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.
 
-1. Get and aggregate Mackerel (host/service) metrics within the calculated period.
-2. Calculate the SLI from the metric obtained in step 1 and determine if it is an SLO violation in the rolling window.
-3. Calculate the time (minutes) of SLO violation within the time frame of the rolling window and calculate the error budget.
-4. Post the calculated error budget, failure time for SLO violation, etc. as Mackerel service metric.
+- shimesaba evaluates window-based SLOs with monitoring data on Mackerel.
+- Post the calculated values (error budget, failure time for SLO violation, uptime etc) by evaluating SLOs . as Mackerel service metric.
 
 
 ## Install
@@ -42,10 +40,9 @@ USAGE:
    shimesaba -config <config file> [command options]
 
 VERSION:
-   current
+   v1.0.0
 
 COMMANDS:
-   dashboard  manage mackerel dashboard for SLI/SLO (deprecated)
    run        run shimesaba. this is main feature (deprecated), use no subcommand
    help, h    Shows a list of commands or help for one command
 
@@ -64,10 +61,9 @@ GLOBAL OPTIONS:
 `shimesaba` binary also runs as AWS Lambda function. 
 shimesaba implicitly behaves as a run command when run as a bootstrap with a Lambda Function
 
-
 CLI options can be specified from environment variables. For example, when `MACKEREL_APIKEY` environment variable is set, the value is set to `-mackerel-apikey` option.
 
-Example Lambda functions configuration.
+Example Lambda functions configuration with [github.com/fujiwara/lambroll](https://github.com/fujiwara/lambroll)
 
 ```json
 {
@@ -93,13 +89,14 @@ The following are the settings for the latest v0.7.0.
 YAML format.
 
 ```yaml
-required_version: ">=0.7.0" # which specifies which versions of shimesaba can be used with your configuration.
+required_version: ">=1.0.0" # which specifies which versions of shimesaba can be used with your configuration.
 
 # This is a common setting item for error budget calculation.
 # It is possible to override the same settings in each SLO definition.
-service_name: prod          # - The name of the service to which you want to submit the service metric for error budgeting.
-metric_prefix: api          # - Specifies the service metric prefix for error budgeting.
-time_frame: 28d             # - Specify the size of the rolling window to calculate the error budget.
+destination:
+    service_name: prod          # - The name of the service to which you want to submit the service metric for error budgeting.
+    metric_prefix: api          # - Specifies the service metric prefix for error budgeting.
+rolling_period: 28d             # - Specify the size of the rolling window to calculate the error budget.
 calculate_interval: 1h      # - Settings related to the interval for calculating the error budget.
 error_budget_size: 0.1%     # - This setting is related to the size of the error budget.
                             #   If % is used, it is a ratio to the size of the rolling window.
@@ -108,23 +105,24 @@ error_budget_size: 0.1%     # - This setting is related to the size of the error
 # Describes the settings for each SLO. SLOs are treated as monitoring rules.
 # The definition of each SLO is determined by ORing the monitoring rules that match the conditions specified in `objectives`.
 # That is, based on the alerts corresponding to the monitoring rules that match the conditions, the existence of any of the alerts will be judged as SLO violation.
-definitions:
+slo:
   # In the availability SLO, if an alert occurs for a monitoring rule name that starts with "SLO availability" 
   #  or an external monitoring rule that ends with "api.example.com", it is considered an SLO violation. 
   - id: availability
-    objectives: 
+    alert_based_sli: # This setting uses Mackerel alerts as SLI.
       - monitor_name_prefix: "SLO availability"
       - monitor_name_suffix: "api.example.com"
         monitor_type: "external" 
   # In the latency SLO, we consider it an SLO violation if an alert occurs for a host metric monitoring rule with a name starting with "SLO availability".
   - id: latency
     error_budget_size: 200m
-    objectives:
+    alert_based_sli:
       - monitor_name_prefix: "SLO latency"
       - monitor_type: "host"
+        try_reassessment: true # This setting attempts to reevaluate an alert using the actual metric only if the type of monitor from which the alert originated is service or host.
 ```
 
-`definitions` takes a list of constituent SLI/SLO definitions.  
+`slo` takes a list of constituent SLI/SLO definitions.  
 6 Mackerel service metrics will be listed per definition. 
 
 For example, if id is `latency` in the above configuration, the following service metric will be posted.
@@ -146,16 +144,7 @@ When combined with other statements, half-width spaces are required before and a
 
 It incorporates [github.com/handlename/ssmwrap](https://github.com/handlename/ssmwrap) for parameter management.  
 If you specify the path of the Parameter Store of AWS Systems Manager separated by commas, it will be output to the environment variable.  
-Useful when used as a Lambda function.  
-
-### Environment variable `SHIMESABA_ENABLE_REASSESSMENT`
-
-Activate experimental features.
-This will re-evaluate the SLO based on the current monitoring rules for host metric monitoring and service metric monitoring, going back from 15 minutes before the specified alert period.
-
-This experimental feature is to avoid the problem of the minimum error budget consumption unit of 5 minutes when evaluating monitoring rules every 5 minutes in AWS Integration, etc.
-
-Translated with www.DeepL.com/Translator (free version)
+Useful when used as a Lambda function. 
 
 ## LICENSE
 
