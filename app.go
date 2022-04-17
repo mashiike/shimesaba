@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"path/filepath"
 	"sort"
 
 	"github.com/Songmu/flextime"
@@ -16,7 +15,6 @@ import (
 type App struct {
 	repo *Repository
 
-	metricConfigs     MetricConfigs
 	definitionConfigs DefinitionConfigs
 
 	cfgPath       string
@@ -33,10 +31,8 @@ func New(apikey string, cfg *Config) (*App, error) {
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 	app := &App{
 		repo:              NewRepository(client),
-		metricConfigs:     cfg.Metrics,
 		definitionConfigs: cfg.Definitions,
 		cfgPath:           cfg.configFilePath,
-		dashboardPath:     filepath.Join(cfg.configFilePath, cfg.Dashboard),
 	}
 	return app, nil
 }
@@ -65,15 +61,8 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	if opts.backfill <= 0 {
 		return errors.New("backfill must over 0")
 	}
-	log.Printf("[debug] metricConfigs %#v", app.metricConfigs)
 	now := flextime.Now()
 	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
-	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
-	metrics, err := repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
-	if err != nil {
-		return err
-	}
-	log.Println("[info] fetched metrics", metrics)
 	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
 	alerts, err := repo.FetchAlerts(ctx, startAt, now)
 	if err != nil {
@@ -86,7 +75,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 			return err
 		}
 		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, metrics, alerts,
+		reports, err := d.CreateReports(ctx, alerts,
 			defCfg.StartAt(now, opts.backfill),
 			now,
 		)

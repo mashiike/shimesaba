@@ -15,18 +15,14 @@ type Definition struct {
 	calculate       time.Duration
 	errorBudgetSize float64
 
-	exprObjectives  []*ExprObjective
 	alertObjectives []*AlertObjective
 }
 
 //NewDefinition creates Definition from DefinitionConfig
 func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
-	exprObjectives := make([]*ExprObjective, 0, len(cfg.Objectives))
 	alertObjectives := make([]*AlertObjective, 0, len(cfg.Objectives))
 	for _, objCfg := range cfg.Objectives {
 		switch objCfg.Type() {
-		case "expr":
-			exprObjectives = append(exprObjectives, NewExprObjective(objCfg.GetComparator()))
 		case "alert":
 			alertObjectives = append(alertObjectives, NewAlertObjective(objCfg.Alert))
 		}
@@ -41,7 +37,6 @@ func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
 		timeFrame:       cfg.DurationTimeFrame(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
-		exprObjectives:  exprObjectives,
 		alertObjectives: alertObjectives,
 	}, nil
 }
@@ -52,24 +47,13 @@ func (d *Definition) ID() string {
 }
 
 // CreateReports returns Report with Metrics
-func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
+func (d *Definition) CreateReports(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
 	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
 	startAt = startAt.Truncate(d.calculate)
 	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.timeFrame, d.calculate)
 	var Reliabilities Reliabilities
-	log.Printf("[debug] expr objective count = %d", len(d.exprObjectives))
-	for _, o := range d.exprObjectives {
-		rc, err := o.EvaluateReliabilities(d.calculate, metrics, startAt, endAt)
-		if err != nil {
-			return nil, err
-		}
-		Reliabilities, err = Reliabilities.Merge(rc)
-		if err != nil {
-			return nil, err
-		}
-	}
 	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
 	for _, o := range d.alertObjectives {
 		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
@@ -90,14 +74,6 @@ func (d *Definition) CreateReports(ctx context.Context, metrics Metrics, alerts 
 	})
 	log.Printf("[debug] created %d reports", len(reports))
 	return reports, nil
-}
-
-func (d *Definition) ExprObjectives() []string {
-	objectives := make([]string, 0, len(d.exprObjectives))
-	for _, obj := range d.exprObjectives {
-		objectives = append(objectives, obj.String())
-	}
-	return objectives
 }
 
 func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {

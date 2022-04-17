@@ -20,22 +20,6 @@ func TestConfigLoadNoError(t *testing.T) {
 		paths    []string
 	}{
 		{
-			casename: "default_config",
-			paths:    []string{"_example/default.yaml"},
-		},
-		{
-			casename: "simple_config",
-			paths:    []string{"testdata/simple.yaml"},
-		},
-		{
-			casename: "alert_source_config",
-			paths:    []string{"testdata/alert_source.yaml"},
-		},
-		{
-			casename: "sample_config",
-			paths:    []string{"testdata/sample.yaml"},
-		},
-		{
 			casename: "v0.7.0 over",
 			paths:    []string{"testdata/v0.7.0.yaml"},
 		},
@@ -56,7 +40,46 @@ func TestConfigLoadNoError(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
 
+func TestConfigLoadError(t *testing.T) {
+	os.Setenv("TARGET_ALB_NAME", "dummy-alb")
+	os.Setenv("POST_METRIC_SERVICE", "dummy-service")
+	cases := []struct {
+		casename string
+		paths    []string
+	}{
+		{
+			casename: "default_config",
+			paths:    []string{"_example/default.yaml"},
+		},
+		{
+			casename: "simple_config",
+			paths:    []string{"testdata/simple.yaml"},
+		},
+		{
+			casename: "alert_source_config",
+			paths:    []string{"testdata/alert_source.yaml"},
+		},
+		{
+			casename: "sample_config",
+			paths:    []string{"testdata/sample.yaml"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.casename, func(t *testing.T) {
+			var buf bytes.Buffer
+			logger.Setup(&buf, "debug")
+			defer func() {
+				t.Log(buf.String())
+				logger.Setup(os.Stderr, "info")
+			}()
+			cfg := shimesaba.NewDefaultConfig()
+			err := cfg.Load(c.paths...)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestDefinitionConfigStartAt(t *testing.T) {

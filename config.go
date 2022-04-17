@@ -1,7 +1,6 @@
 package shimesaba
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,7 +11,6 @@ import (
 
 	gv "github.com/hashicorp/go-version"
 	gc "github.com/kayac/go-config"
-	"github.com/mashiike/evaluator"
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
@@ -20,7 +18,6 @@ import (
 type Config struct {
 	RequiredVersion string `yaml:"required_version" json:"required_version"`
 
-	Metrics     MetricConfigs     `yaml:"metrics" json:"metrics"`
 	Definitions DefinitionConfigs `yaml:"definitions" json:"definitions"`
 
 	//Common definition parameter
@@ -30,29 +27,8 @@ type Config struct {
 	ErrorBudgetSize   interface{} `yaml:"error_budget_size" json:"error_budget_size"`
 	CalculateInterval string      `yaml:"calculate_interval" json:"calculate_interval"`
 
-	Dashboard          string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
 	configFilePath     string
 	versionConstraints gv.Constraints
-}
-
-//MetricConfig handles metric information obtained from Mackerel
-type MetricConfig struct {
-	ID                  string     `yaml:"id,omitempty" json:"id,omitempty"`
-	Type                MetricType `yaml:"type,omitempty" json:"type,omitempty"`
-	Name                string     `yaml:"name,omitempty" json:"name,omitempty"`
-	ServiceName         string     `yaml:"service_name,omitempty" json:"service_name,omitempty"`
-	Roles               []string   `yaml:"roles,omitempty" json:"roles,omitempty"`
-	HostName            string     `yaml:"host_name,omitempty" json:"host_name,omitempty"`
-	AggregationInterval string     `yaml:"aggregation_interval,omitempty" json:"aggregation_interval,omitempty"`
-	AggregationMethod   string     `yaml:"aggregation_method,omitempty" json:"aggregation_method,omitempty"`
-	InterpolatedValue   *float64   `yaml:"interpolated_value,omitempty" json:"interpolated_value,omitempty"`
-	aggregationInterval time.Duration
-}
-
-//String output json
-func (c *MetricConfig) String() string {
-	bs, _ := json.Marshal(c)
-	return string(bs)
 }
 
 func coalesceString(strs ...string) string {
@@ -62,125 +38,6 @@ func coalesceString(strs ...string) string {
 		}
 	}
 	return ""
-}
-
-//MergeInto merges MetricConfigs together
-func (c *MetricConfig) MergeInto(o *MetricConfig) {
-	c.ID = coalesceString(o.ID, c.ID)
-	c.Name = coalesceString(o.Name, c.Name)
-	if o.Type != 0 {
-		c.Type = o.Type
-	}
-	c.ServiceName = coalesceString(o.ServiceName, c.ServiceName)
-	c.HostName = coalesceString(o.HostName, c.HostName)
-	c.AggregationInterval = coalesceString(o.AggregationInterval, c.AggregationInterval)
-	c.AggregationMethod = coalesceString(o.AggregationMethod, c.AggregationMethod)
-	roles := make(map[string]struct{}, len(c.Roles))
-	for _, role := range c.Roles {
-		roles[role] = struct{}{}
-	}
-	for _, role := range o.Roles {
-		roles[role] = struct{}{}
-	}
-	c.Roles = make([]string, 0, len(roles))
-	for role := range roles {
-		c.Roles = append(c.Roles, role)
-	}
-}
-
-// Restrict restricts a configuration.
-func (c *MetricConfig) Restrict() error {
-	if c.ID == "" {
-		return errors.New("id is required")
-	}
-	if c.ServiceName == "" {
-		return errors.New("service_name is required")
-	}
-	if c.Type == 0 {
-		return errors.New("type is required")
-	}
-	c.AggregationMethod = coalesceString(c.AggregationMethod, "max")
-
-	if c.AggregationInterval == "" {
-		c.aggregationInterval = time.Minute
-	} else {
-		var err error
-		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
-		if err != nil {
-			return fmt.Errorf("aggregation_interval is invalid format: %w", err)
-		}
-		if c.aggregationInterval < time.Minute {
-			return fmt.Errorf("aggregation_interval must over or equal 1m")
-		}
-	}
-	return nil
-}
-
-// DurationAggregation converts CalculateInterval as time.Duration
-func (c *MetricConfig) DurationAggregation() time.Duration {
-	if c.aggregationInterval == 0 {
-		var err error
-		c.aggregationInterval, err = timeutils.ParseDuration(c.AggregationInterval)
-		if err != nil {
-			panic(err)
-		}
-	}
-	return c.aggregationInterval
-}
-
-//MetricConfigs is a collection of MetricConfig
-type MetricConfigs map[string]*MetricConfig
-
-// Restrict restricts a metric configuration.
-func (c MetricConfigs) Restrict() error {
-	for id, cfg := range c {
-		if id != cfg.ID {
-			return fmt.Errorf("metrics id=%s not match config id", id)
-		}
-		if err := cfg.Restrict(); err != nil {
-			return fmt.Errorf("metrics[%s] %w", id, err)
-		}
-	}
-	return nil
-}
-
-//ToSlice converts the collection to Slice
-func (c MetricConfigs) ToSlice() []*MetricConfig {
-	ret := make([]*MetricConfig, 0, len(c))
-	for _, cfg := range c {
-		ret = append(ret, cfg)
-	}
-	return ret
-}
-
-// MarshalYAML controls Yamlization
-func (c MetricConfigs) MarshalYAML() (interface{}, error) {
-	return c.ToSlice(), nil
-}
-
-// String implements fmt.Stringer
-func (c MetricConfigs) String() string {
-	return fmt.Sprintf("%v", c.ToSlice())
-}
-
-// UnmarshalYAML merges duplicate ID MetricConfig
-func (c *MetricConfigs) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	tmp := make([]*MetricConfig, 0, len(*c))
-	if err := unmarshal(&tmp); err != nil {
-		return err
-	}
-	if *c == nil {
-		*c = make(MetricConfigs, len(tmp))
-	}
-	for _, cfg := range tmp {
-
-		if alreadyExist, ok := (*c)[cfg.ID]; ok {
-			alreadyExist.MergeInto(cfg)
-		} else {
-			(*c)[cfg.ID] = cfg
-		}
-	}
-	return nil
 }
 
 // DefinitionConfig is a setting related to SLI/SLO
@@ -314,11 +171,8 @@ func (c *DefinitionConfig) StartAt(now time.Time, backfill int) time.Time {
 
 // Objective Config is a SLO setting
 type ObjectiveConfig struct {
-	Expr                 string                `yaml:"expr" json:"expr"`
 	Alert                *AlertObjectiveConfig `yaml:"alert" json:"alert"`
 	AlertObjectiveConfig `yaml:",inline"`
-
-	comparator evaluator.Comparator
 }
 
 // Restrict restricts a configuration.
@@ -329,51 +183,14 @@ func (c *ObjectiveConfig) Restrict() error {
 		return nil
 	}
 	log.Println("[warn] this objective config is deprecated and will not be available starting from v0.8.0.")
-	if c.Expr == "" && c.Alert == nil {
-		return errors.New("alert config is required")
-	}
-	if c.Expr != "" && c.Alert != nil {
-		return errors.New("only one of expr or alert can be set")
-	}
-	if c.Expr != "" {
-		log.Println("[warn] the Objective feature with `expr` will not be available after v0.8.0, please set up an equivalent monitor on Mackerel to use the Objective feature with alerts.")
-		return c.buildComparator()
-	}
 	if c.Alert != nil {
-		log.Println("[warn] Since v0.8.0, the `expr` objective feature will be removed, so the key `alert` will no longer be needed.")
 		return c.Alert.Restrict()
 	}
 	return globalErr
 }
 
-func (c *ObjectiveConfig) buildComparator() error {
-	e, err := evaluator.New(c.Expr)
-	if err != nil {
-		return fmt.Errorf("build expr failed: %w", err)
-	}
-	var ok bool
-	c.comparator, ok = e.AsComparator()
-	if !ok {
-		return errors.New("expr is not comparative")
-	}
-	return nil
-}
-
-// GetComparator returns a Comparator generated from ObjectiveConfig
-func (c *ObjectiveConfig) GetComparator() evaluator.Comparator {
-	if c.comparator == nil {
-		if err := c.buildComparator(); err != nil {
-			panic(err)
-		}
-	}
-	return c.comparator
-}
-
 //Type returns objective type string
 func (c *ObjectiveConfig) Type() string {
-	if c.Expr != "" {
-		return "expr"
-	}
 	return "alert"
 }
 
@@ -485,12 +302,6 @@ func (c *Config) Restrict() error {
 		}
 		c.versionConstraints = constraints
 	}
-	if len(c.Metrics) > 0 {
-		log.Println("[warn] Since v0.8.0, the setting `metrics` is no longer necessary because the expr function will be removed. This setting is deprecated.")
-		if err := c.Metrics.Restrict(); err != nil {
-			return fmt.Errorf("metrics has invalid: %w", err)
-		}
-	}
 	for id, cfg := range c.Definitions {
 		base := &DefinitionConfig{
 			TimeFrame:         c.TimeFrame,
@@ -504,9 +315,6 @@ func (c *Config) Restrict() error {
 	}
 	if err := c.Definitions.Restrict(); err != nil {
 		return fmt.Errorf("definitions has invalid: %w", err)
-	}
-	if c.Dashboard != "" {
-		log.Printf("[warn] Use of the dashboard management feature is deprecated; we plan to remove this feature after v0.8.0.")
 	}
 
 	return nil
