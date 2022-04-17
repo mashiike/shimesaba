@@ -3,11 +3,8 @@ package shimesaba_test
 import (
 	"bytes"
 	"context"
-	"encoding/csv"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -27,7 +24,7 @@ func TestAppWithMock(t *testing.T) {
 				expected   map[string]int
 			}{
 				{
-					configFile: "testdata/alert_source.yaml",
+					configFile: "testdata/app_test.yaml",
 					expected: map[string]int{
 						"shimesaba.error_budget.alerts":                        backfill,
 						"shimesaba.error_budget_consumption.alerts":            backfill,
@@ -47,7 +44,8 @@ func TestAppWithMock(t *testing.T) {
 						logger.Setup(os.Stderr, "info")
 					}()
 					cfg := shimesaba.NewDefaultConfig()
-					cfg.Load(c.configFile)
+					err := cfg.Load(c.configFile)
+					require.NoError(t, err, "load cfg")
 					client := newMockMackerelClient(t)
 					app, err := shimesaba.NewWithMackerelClient(client, cfg)
 					require.NoError(t, err, "create app")
@@ -72,18 +70,14 @@ func TestAppWithMock(t *testing.T) {
 
 type mockMackerelClient struct {
 	shimesaba.MackerelClient
-	hostMetricData    []timeValueTuple
-	serviceMetricData []timeValueTuple
-	posted            []*mackerel.MetricValue
-	t                 *testing.T
+	posted []*mackerel.MetricValue
+	t      *testing.T
 }
 
 func newMockMackerelClient(t *testing.T) *mockMackerelClient {
 	t.Helper()
 	return &mockMackerelClient{
-		hostMetricData:    loadTupleFromCSV(t, "testdata/dummy3.csv"),
-		serviceMetricData: loadTupleFromCSV(t, "testdata/dummy4.csv"),
-		t:                 t,
+		t: t,
 	}
 }
 
@@ -156,53 +150,4 @@ func (m *mockMackerelClient) GetMonitor(monitorID string) (mackerel.Monitor, err
 		Name: "Dummy Service Metric Monitor",
 		Type: "service",
 	}, nil
-}
-
-type timeValueTuple struct {
-	Time  time.Time
-	Value interface{}
-}
-
-func loadTupleFromCSV(t *testing.T, path string) []timeValueTuple {
-	t.Helper()
-	fp, err := os.Open(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer fp.Close()
-
-	reader := csv.NewReader(fp)
-	records, err := reader.ReadAll()
-	if err != nil {
-		t.Fatal(err)
-	}
-	header := records[0]
-	var timeIndex, valueIndex int
-	for i, h := range header {
-		if strings.HasPrefix(h, "time") {
-			timeIndex = i
-			continue
-		}
-		if strings.HasSuffix(h, "value") {
-			valueIndex = i
-			continue
-		}
-	}
-	ret := make([]timeValueTuple, 0, len(records)-1)
-	for _, record := range records[1:] {
-
-		tt, err := time.Parse(time.RFC3339Nano, record[timeIndex])
-		if err != nil {
-			t.Fatal(err)
-		}
-		tv, err := strconv.ParseFloat(record[valueIndex], 64)
-		if err != nil {
-			t.Fatal(err)
-		}
-		ret = append(ret, timeValueTuple{
-			Time:  tt,
-			Value: tv,
-		})
-	}
-	return ret
 }

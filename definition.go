@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//Definition is SLI/SLO Definition
+//Definition is SLO Definition
 type Definition struct {
 	id              string
 	destination     *Destination
@@ -18,30 +18,27 @@ type Definition struct {
 	alertObjectives []*AlertObjective
 }
 
-//NewDefinition creates Definition from DefinitionConfig
-func NewDefinition(cfg *DefinitionConfig) (*Definition, error) {
-	alertObjectives := make([]*AlertObjective, 0, len(cfg.Objectives))
-	for _, objCfg := range cfg.Objectives {
-		switch objCfg.Type() {
-		case "alert":
-			alertObjectives = append(alertObjectives, NewAlertObjective(objCfg.Alert))
-		}
+//NewDefinition creates Definition from SLOConfig
+func NewDefinition(cfg *SLOConfig) (*Definition, error) {
+	alertObjectives := make([]*AlertObjective, 0, len(cfg.AlertBasedSLI))
+	for _, cfg := range cfg.AlertBasedSLI {
+		alertObjectives = append(alertObjectives, NewAlertObjective(cfg))
 	}
 	return &Definition{
 		id: cfg.ID,
 		destination: &Destination{
-			ServiceName:  cfg.ServiceName,
-			MetricPrefix: cfg.MetricPrefix,
-			MetricSuffix: cfg.MetricSuffix,
+			ServiceName:  cfg.Destination.ServiceName,
+			MetricPrefix: cfg.Destination.MetricPrefix,
+			MetricSuffix: cfg.Destination.MetricSuffix,
 		},
-		timeFrame:       cfg.DurationTimeFrame(),
+		timeFrame:       cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
 		alertObjectives: alertObjectives,
 	}, nil
 }
 
-// ID returns DefinitionConfig.id
+// ID returns SLOConfig.id
 func (d *Definition) ID() string {
 	return d.id
 }

@@ -52,11 +52,11 @@ func TestAlertObjective(t *testing.T) {
 		),
 	}
 	cases := []struct {
-		cfg      *shimesaba.AlertObjectiveConfig
+		cfg      *shimesaba.AlertBasedSLIConfig
 		expected map[time.Time]bool
 	}{
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorID: "hogera",
 			},
 			expected: map[time.Time]bool{
@@ -67,7 +67,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNameSuffix: "hoge",
 			},
 			expected: map[time.Time]bool{
@@ -78,7 +78,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorID: "fugara",
 			},
 			expected: map[time.Time]bool{
@@ -91,7 +91,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNamePrefix: "SLO",
 			},
 			expected: map[time.Time]bool{
@@ -104,7 +104,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNamePrefix: "SLO",
 				MonitorType:       "Expression",
 			},
@@ -116,7 +116,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNameSuffix: "hoge",
 				MonitorType:       "service",
 			},

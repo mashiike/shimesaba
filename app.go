@@ -13,12 +13,8 @@ import (
 
 //App manages life cycle
 type App struct {
-	repo *Repository
-
-	definitionConfigs DefinitionConfigs
-
-	cfgPath       string
-	dashboardPath string
+	repo       *Repository
+	SLOConfigs []*SLOConfig
 }
 
 //New creates an app
@@ -30,9 +26,8 @@ func New(apikey string, cfg *Config) (*App, error) {
 //NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
 	app := &App{
-		repo:              NewRepository(client),
-		definitionConfigs: cfg.Definitions,
-		cfgPath:           cfg.configFilePath,
+		repo:       NewRepository(client),
+		SLOConfigs: cfg.SLO,
 	}
 	return app, nil
 }
@@ -62,14 +57,21 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 		return errors.New("backfill must over 0")
 	}
 	now := flextime.Now()
-	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
+	startAt := now
+	for _, cfg := range app.SLOConfigs {
+		tmp := cfg.StartAt(now, opts.backfill)
+		if tmp.Before(startAt) {
+			startAt = tmp
+		}
+	}
+
 	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
 	alerts, err := repo.FetchAlerts(ctx, startAt, now)
 	if err != nil {
 		return err
 	}
 	log.Println("[info] fetched alerts", len(alerts))
-	for _, defCfg := range app.definitionConfigs {
+	for _, defCfg := range app.SLOConfigs {
 		d, err := NewDefinition(defCfg)
 		if err != nil {
 			return err

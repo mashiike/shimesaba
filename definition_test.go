@@ -38,21 +38,21 @@ func TestDefinition(t *testing.T) {
 		),
 	}
 	cases := []struct {
-		defCfg   *shimesaba.DefinitionConfig
+		defCfg   *shimesaba.SLOConfig
 		expected []*shimesaba.Report
 	}{
 		{
-			defCfg: &shimesaba.DefinitionConfig{
-				ID:                "alert_and_metric_mixing",
-				ServiceName:       "test",
-				TimeFrame:         "10m",
+			defCfg: &shimesaba.SLOConfig{
+				ID: "alert_and_metric_mixing",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "test",
+				},
+				RollingPeriod:     "10m",
 				CalculateInterval: "5m",
 				ErrorBudgetSize:   0.3,
-				Objectives: []*shimesaba.ObjectiveConfig{
+				AlertBasedSLI: []*shimesaba.AlertBasedSLIConfig{
 					{
-						Alert: &shimesaba.AlertObjectiveConfig{
-							MonitorID: "hogera",
-						},
+						MonitorID: "hogera",
 					},
 				},
 			},

@@ -9,10 +9,10 @@ import (
 )
 
 type AlertObjective struct {
-	cfg *AlertObjectiveConfig
+	cfg *AlertBasedSLIConfig
 }
 
-func NewAlertObjective(cfg *AlertObjectiveConfig) *AlertObjective {
+func NewAlertObjective(cfg *AlertBasedSLIConfig) *AlertObjective {
 	return &AlertObjective{cfg: cfg}
 }
 
@@ -56,6 +56,11 @@ func (o AlertObjective) matchAlert(alert *Alert) bool {
 func (o AlertObjective) MatchMonitor(monitor *Monitor) bool {
 	if o.cfg.MonitorID != "" {
 		if monitor.ID() != o.cfg.MonitorID {
+			return false
+		}
+	}
+	if o.cfg.MonitorName != "" {
+		if monitor.Name() != o.cfg.MonitorName {
 			return false
 		}
 	}

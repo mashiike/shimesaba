@@ -1,0 +1,26 @@
+required_version: ">=1.0.0"
+
+rolling_period: 28d
+destination:
+  calculate_interval: 1h
+error_budget_size: 0.01%
+
+slo:
+  - id: external_api_availability
+    destination:
+      service_name:  prod
+      metric_prefix: external
+      metric_suffix: availability
+    alert_based_sli:
+      - monitor_name: api.example.com
+        monitor_type: external
+  - id: internal_api_availability
+    destination:
+      service_name:  prod
+      metric_prefix: internal
+      metric_suffix: availability
+    alert_based_sli:
+      - monitor_name: internal.api.example.com
+        monitor_type: external
+
+
