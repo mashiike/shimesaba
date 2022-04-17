@@ -2,7 +2,6 @@ package shimesaba_test
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -61,10 +60,6 @@ func TestAlerts(t *testing.T) {
 func TestAlertEvaluateReliabilities(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 8, 0, 0, time.UTC))
 	defer restore()
-	os.Setenv("SHIMESABA_ENABLE_REASSESSMENT", "on")
-	defer func() {
-		os.Setenv("SHIMESABA_ENABLE_REASSESSMENT", "")
-	}()
 	cases := []struct {
 		alert             *shimesaba.Alert
 		timeFrame         time.Duration
@@ -235,7 +230,7 @@ func TestAlertEvaluateReliabilities(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
-			actual, err := c.alert.EvaluateReliabilities(c.timeFrame)
+			actual, err := c.alert.EvaluateReliabilities(c.timeFrame, true)
 			require.NoError(t, err)
 			require.EqualValues(t, c.expectedGenerator(), actual)
 		})

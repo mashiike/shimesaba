@@ -32,7 +32,7 @@ func (o AlertObjective) EvaluateReliabilities(timeFrame time.Duration, alerts Al
 		if !o.matchAlert(alert) {
 			continue
 		}
-		tmp, err := alert.EvaluateReliabilities(timeFrame)
+		tmp, err := alert.EvaluateReliabilities(timeFrame, o.cfg.Reassessment)
 		if err != nil {
 			return nil, err
 		}
