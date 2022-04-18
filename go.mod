@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/Songmu/flextime v0.1.0
-	github.com/aws/aws-lambda-go v1.29.0
+	github.com/aws/aws-lambda-go v1.30.0
 	github.com/fatih/color v1.13.0
 	github.com/fujiwara/logutils v1.1.0
 	github.com/google/go-jsonnet v0.18.0
