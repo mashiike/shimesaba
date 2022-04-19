@@ -1,10 +1,7 @@
 package shimesaba
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -22,11 +19,6 @@ type MackerelClient interface {
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error
-
-	FindDashboards() ([]*mackerel.Dashboard, error)
-	FindDashboard(dashboardID string) (*mackerel.Dashboard, error)
-	CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error)
-	UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error)
 
 	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
 	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
@@ -149,69 +141,6 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 		Value: report.FailureTime.Minutes(),
 	})
 	return values
-}
-
-//Dashboard is alias of mackerel.Dashboard
-type Dashboard = mackerel.Dashboard
-
-var ErrDashboardNotFound = errors.New("dashboard not found")
-
-// FindDashboardID get Mackerel Dashboard ID from url or id
-func (repo *Repository) FindDashboardID(dashboardIDOrURL string) (string, error) {
-	dashboards, err := repo.client.FindDashboards()
-	if err != nil {
-		return "", err
-	}
-	for _, d := range dashboards {
-		if d.ID == dashboardIDOrURL {
-			return d.ID, nil
-		}
-		if d.URLPath == dashboardIDOrURL {
-			return d.ID, nil
-		}
-	}
-	return "", ErrDashboardNotFound
-}
-
-// FindDashboard get Mackerel Dashboard
-func (repo *Repository) FindDashboard(dashboardIDOrURL string) (*Dashboard, error) {
-	id, err := repo.FindDashboardID(dashboardIDOrURL)
-	if err != nil {
-		return nil, err
-	}
-	//Get Widgets
-	dashboard, err := repo.client.FindDashboard(id)
-	if err != nil {
-		return nil, err
-	}
-
-	dashboard.ID = ""
-	dashboard.CreatedAt = 0
-	dashboard.UpdatedAt = 0
-	return dashboard, nil
-}
-
-// SaveDashboard post Mackerel Dashboard
-func (repo *Repository) SaveDashboard(ctx context.Context, dashboard *Dashboard) error {
-	id, err := repo.FindDashboardID(dashboard.URLPath)
-	if err == nil {
-		log.Printf("[debug] update dashboard id=%s url=%s", id, dashboard.URLPath)
-		after, err := repo.client.UpdateDashboard(id, dashboard)
-		if err != nil {
-			return err
-		}
-		log.Printf("[info] updated dashboard id=%s url=%s updated_at=%s", after.ID, after.URLPath, time.Unix(after.UpdatedAt, 0).String())
-	}
-	if err == ErrDashboardNotFound {
-		log.Printf("[debug] create dashboard url=%s", dashboard.URLPath)
-		after, err := repo.client.CreateDashboard(dashboard)
-		if err != nil {
-			return err
-		}
-		log.Printf("[info] updated dashboard id=%s url=%s updated_at=%s", after.ID, after.URLPath, time.Unix(after.CreatedAt, 0).String())
-	}
-	return err
-
 }
 
 // FetchAlerts retrieves alerts for a specified period of time
@@ -463,32 +392,4 @@ func (c DryRunMackerelClient) PostServiceMetricValues(serviceName string, metric
 		log.Printf("[notice] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
 	}
 	return nil
-}
-
-func (c DryRunMackerelClient) CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
-	dashboard, err := dashboardToString(param)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[notice] **DRY RUN** action=CreateDashboard, dashboard=%s", dashboard)
-	return param, nil
-}
-
-func (c DryRunMackerelClient) UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
-	dashboard, err := dashboardToString(param)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[notice] **DRY RUN** action=UpdateDashboard, dashboard_id=`%s`, dashboard=%s", dashboardID, dashboard)
-	return param, nil
-}
-
-func dashboardToString(param *mackerel.Dashboard) (string, error) {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(param); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
 }
