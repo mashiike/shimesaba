@@ -286,10 +286,6 @@ func (c *SLOConfig) ErrorBudgetSizeParcentage() float64 {
 	return c.errorBudgetSizeParcentage
 }
 
-func (c *SLOConfig) StartAt(now time.Time, backfill int) time.Time {
-	return now.Truncate(c.calculateInterval).Add(-(time.Duration(backfill) * c.calculateInterval) - c.rollingPeriod)
-}
-
 func coalesceString(strs ...string) string {
 	for _, str := range strs {
 		if str != "" {

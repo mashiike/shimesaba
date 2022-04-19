@@ -121,7 +121,7 @@ func TestDefinition(t *testing.T) {
 			require.NoError(t, err)
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateReportsWithPeriod(context.Background(), alerts,
+			actual, err := def.CreateReportsWithAlertsAndPeriod(context.Background(), alerts,
 				time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 				time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 			)

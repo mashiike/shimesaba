@@ -43,12 +43,21 @@ func (d *Definition) ID() string {
 	return d.id
 }
 
-// CreateReports returns Report with Metrics
-func (d *Definition) CreateReports(ctx context.Context, alerts Alerts, now time.Time, backfill int) ([]*Report, error) {
-	return d.CreateReportsWithPeriod(ctx, alerts, d.StartAt(now, backfill), now)
+type DataProvider interface {
+	FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error)
 }
 
-func (d *Definition) CreateReportsWithPeriod(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
+// CreateReports returns Report with Metrics
+func (d *Definition) CreateReports(ctx context.Context, provider DataProvider, now time.Time, backfill int) ([]*Report, error) {
+	startAt := d.StartAt(now, backfill)
+	alerts, err := provider.FetchAlerts(ctx, startAt, now)
+	if err != nil {
+		return nil, err
+	}
+	return d.CreateReportsWithAlertsAndPeriod(ctx, alerts, d.StartAt(now, backfill), now)
+}
+
+func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
 	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
 	startAt = startAt.Truncate(d.calculate)
 	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)

@@ -32,6 +32,11 @@ type Repository struct {
 
 	mu          sync.Mutex
 	monitorByID map[string]*Monitor
+
+	alertMu        sync.Mutex
+	alertCache     Alerts
+	alertCurrentAt time.Time
+	alertNextID    string
 }
 
 // NewRepository creates Repository
@@ -39,6 +44,7 @@ func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
 		client:      client,
 		monitorByID: make(map[string]*Monitor),
+		alertCache:  make(Alerts, 0, 100),
 	}
 }
 
@@ -145,49 +151,78 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 
 // FetchAlerts retrieves alerts for a specified period of time
 func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error) {
+	repo.alertMu.Lock()
+	defer repo.alertMu.Unlock()
+
+	if len(repo.alertCache) == 0 {
+		if err := repo.fetchAlertsInitial(ctx); err != nil {
+			return nil, err
+		}
+	}
+	for startAt.Before(repo.alertCurrentAt) && repo.alertNextID != "" {
+		if err := repo.fetchAlertsIncremental(ctx); err != nil {
+			return nil, err
+		}
+	}
 	alerts := make(Alerts, 0, 100)
-	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
-	resp, err := repo.client.FindWithClosedAlerts()
-	if err != nil {
-		return nil, err
-	}
-	converted, err := repo.convertAlerts(resp, endAt)
-	if err != nil {
-		return nil, err
-	}
-	alerts = append(alerts, converted...)
-	currentAt := flextime.Now()
-	if len(alerts) != 0 {
-		currentAt = alerts[len(alerts)-1].OpenedAt
-	}
-	for startAt.Before(currentAt) && resp.NextID != "" {
-		log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", resp.NextID)
-		resp, err = repo.client.FindWithClosedAlertsByNextID(resp.NextID)
-		if err != nil {
-			return nil, err
+	for _, alert := range repo.alertCache {
+		if alert.OpenedAt.After(endAt) {
+			continue
 		}
-		converted, err := repo.convertAlerts(resp, endAt)
-		if err != nil {
-			return nil, err
+		if alert.OpenedAt.Before(startAt) {
+			break
 		}
-		alerts = append(alerts, converted...)
-		if len(alerts) != 0 {
-			currentAt = alerts[len(alerts)-1].OpenedAt
-		}
+		alerts = append(alerts, alert)
 	}
 	return alerts, nil
 }
 
-func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) ([]*Alert, error) {
+func (repo *Repository) fetchAlertsInitial(ctx context.Context) error {
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
+	resp, err := repo.client.FindWithClosedAlerts()
+	if err != nil {
+		return err
+	}
+	converted, err := repo.convertAlerts(resp)
+	if err != nil {
+		return err
+	}
+	repo.alertCache = append(repo.alertCache, converted...)
+	currentAt := flextime.Now()
+	if len(repo.alertCache) != 0 {
+		currentAt = repo.alertCache[len(repo.alertCache)-1].OpenedAt
+	}
+	repo.alertCurrentAt = currentAt
+	repo.alertNextID = resp.NextID
+	return nil
+}
+
+func (repo *Repository) fetchAlertsIncremental(ctx context.Context) error {
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", repo.alertNextID)
+	resp, err := repo.client.FindWithClosedAlertsByNextID(repo.alertNextID)
+	if err != nil {
+		return err
+	}
+	converted, err := repo.convertAlerts(resp)
+	if err != nil {
+		return err
+	}
+	repo.alertCache = append(repo.alertCache, converted...)
+
+	if len(converted) != 0 {
+		repo.alertCurrentAt = converted[len(converted)-1].OpenedAt
+		repo.alertNextID = resp.NextID
+	}
+	return nil
+}
+
+func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp) ([]*Alert, error) {
 	alerts := make([]*Alert, 0, len(resp.Alerts))
 	for _, alert := range resp.Alerts {
 		if alert.MonitorID == "" {
 			continue
 		}
 		openedAt := time.Unix(alert.OpenedAt, 0)
-		if openedAt.After(endAt) {
-			continue
-		}
 		var closedAt *time.Time
 		if alert.Status == "OK" {
 			tmpClosedAt := time.Unix(alert.ClosedAt, 0)

@@ -13,8 +13,8 @@ import (
 
 //App manages life cycle
 type App struct {
-	repo       *Repository
-	SLOConfigs []*SLOConfig
+	repo           *Repository
+	SLODefinitions []*Definition
 }
 
 //New creates an app
@@ -25,9 +25,17 @@ func New(apikey string, cfg *Config) (*App, error) {
 
 //NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
+	slo := make([]*Definition, 0, len(cfg.SLO))
+	for _, c := range cfg.SLO {
+		d, err := NewDefinition(c)
+		if err != nil {
+			return nil, err
+		}
+		slo = append(slo, d)
+	}
 	app := &App{
-		repo:       NewRepository(client),
-		SLOConfigs: cfg.SLO,
+		repo:           NewRepository(client),
+		SLODefinitions: slo,
 	}
 	return app, nil
 }
@@ -57,27 +65,10 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 		return errors.New("backfill must over 0")
 	}
 	now := flextime.Now()
-	startAt := now
-	for _, cfg := range app.SLOConfigs {
-		tmp := cfg.StartAt(now, opts.backfill)
-		if tmp.Before(startAt) {
-			startAt = tmp
-		}
-	}
 
-	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
-	alerts, err := repo.FetchAlerts(ctx, startAt, now)
-	if err != nil {
-		return err
-	}
-	log.Println("[info] fetched alerts", len(alerts))
-	for _, defCfg := range app.SLOConfigs {
-		d, err := NewDefinition(defCfg)
-		if err != nil {
-			return err
-		}
-		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, alerts, now, opts.backfill)
+	for _, d := range app.SLODefinitions {
+		log.Printf("[info] check serice level objectives[%s]\n", d.ID())
+		reports, err := d.CreateReports(ctx, repo, now, opts.backfill)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}
