@@ -11,7 +11,7 @@ import (
 type Definition struct {
 	id              string
 	destination     *Destination
-	timeFrame       time.Duration
+	rollingPeriod   time.Duration
 	calculate       time.Duration
 	errorBudgetSize float64
 
@@ -31,7 +31,7 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 			MetricPrefix: cfg.Destination.MetricPrefix,
 			MetricSuffix: cfg.Destination.MetricSuffix,
 		},
-		timeFrame:       cfg.DurationRollingPeriod(),
+		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
 		alertObjectives: alertObjectives,
@@ -44,12 +44,16 @@ func (d *Definition) ID() string {
 }
 
 // CreateReports returns Report with Metrics
-func (d *Definition) CreateReports(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
+func (d *Definition) CreateReports(ctx context.Context, alerts Alerts, now time.Time, backfill int) ([]*Report, error) {
+	return d.CreateReportsWithPeriod(ctx, alerts, d.StartAt(now, backfill), now)
+}
+
+func (d *Definition) CreateReportsWithPeriod(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
 	log.Printf("[debug] original report range = %s ~ %s", startAt, endAt)
 	startAt = startAt.Truncate(d.calculate)
 	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
-	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.timeFrame, d.calculate)
+	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
 	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
 	for _, o := range d.alertObjectives {
@@ -65,7 +69,7 @@ func (d *Definition) CreateReports(ctx context.Context, alerts Alerts, startAt, 
 	for _, r := range Reliabilities {
 		log.Printf("[debug] reliability[%s~%s] =  (%s, %s)", r.TimeFrameStartAt(), r.TimeFrameEndAt(), r.UpTime(), r.FailureTime())
 	}
-	reports := NewReports(d.id, d.destination, d.errorBudgetSize, d.timeFrame, Reliabilities)
+	reports := NewReports(d.id, d.destination, d.errorBudgetSize, d.rollingPeriod, Reliabilities)
 	sort.Slice(reports, func(i, j int) bool {
 		return reports[i].DataPoint.Before(reports[j].DataPoint)
 	})
@@ -87,4 +91,8 @@ func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {
 		objectiveMonitors = append(objectiveMonitors, monitor)
 	}
 	return objectiveMonitors
+}
+
+func (d *Definition) StartAt(now time.Time, backfill int) time.Time {
+	return now.Truncate(d.calculate).Add(-(time.Duration(backfill) * d.calculate) - d.rollingPeriod)
 }

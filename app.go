@@ -77,10 +77,7 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 			return err
 		}
 		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, alerts,
-			defCfg.StartAt(now, opts.backfill),
-			now,
-		)
+		reports, err := d.CreateReports(ctx, alerts, now, opts.backfill)
 		if err != nil {
 			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
 		}

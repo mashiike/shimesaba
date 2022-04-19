@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -120,7 +121,7 @@ func TestDefinition(t *testing.T) {
 			require.NoError(t, err)
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateReports(context.Background(), alerts,
+			actual, err := def.CreateReportsWithPeriod(context.Background(), alerts,
 				time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 				time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 			)
@@ -139,4 +140,52 @@ func TestDefinition(t *testing.T) {
 		})
 	}
 
+}
+
+func TestSLODefinitionStartAt(t *testing.T) {
+	cases := []struct {
+		now      time.Time
+		backfill int
+		cfg      *shimesaba.SLOConfig
+		expected time.Time
+	}{
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "1d",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1h",
+				ErrorBudgetSize:   0.05,
+			},
+			expected: time.Date(2022, 1, 13, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "365d",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1d",
+				ErrorBudgetSize:   0.05,
+			},
+			expected: time.Date(2021, 1, 11, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
+			require.NoError(t, c.cfg.Restrict())
+			d, err := shimesaba.NewDefinition(c.cfg)
+			require.NoError(t, err)
+			actual := d.StartAt(c.now, c.backfill)
+			require.EqualValues(t, c.expected, actual)
+		})
+	}
 }
