@@ -99,16 +99,16 @@ func (repo *Repository) postServiceMetricValues(ctx context.Context, service str
 		if size < end {
 			end = size
 		}
-		log.Printf("[info] PostServiceMetricValues %s values[%d:%d]\n", service, start, end)
+		log.Printf("[debug] PostServiceMetricValues to Mackerel  %s values[%d:%d]\n", service, start, end)
 		err := policy.Do(ctx, func() error {
 			err := repo.client.PostServiceMetricValues(service, values[start:end])
 			if err != nil {
-				log.Printf("[warn] PostServiceMetricValues retry because: %s\n", err)
+				log.Printf("[warn] PostServiceMetricValues to Mackerel failed, retry because: %s\n", err)
 			}
 			return err
 		})
 		if err != nil {
-			log.Printf("[warn] failed to PostServiceMetricValues service:%s %s\n", service, err)
+			log.Printf("[warn] PostServiceMetricValues to Mackerel failed:%s %s\n", service, err)
 		}
 	}
 	return nil
@@ -424,7 +424,7 @@ type DryRunMackerelClient struct {
 
 func (c DryRunMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	for _, value := range metricValues {
-		log.Printf("[notice] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
+		log.Printf("[debug] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
 	}
 	return nil
 }

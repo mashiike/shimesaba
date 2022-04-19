@@ -64,7 +64,7 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
-	log.Printf("[debug] alert objective count = %d", len(d.alertBasedSLIs))
+	log.Printf("[debug] alert based SLI count = %d", len(d.alertBasedSLIs))
 	for _, o := range d.alertBasedSLIs {
 		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {

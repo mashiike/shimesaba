@@ -18,10 +18,11 @@ import (
 )
 
 var (
-	Version        = "current"
-	ssmwrapErr     error
-	globalDryRun   bool
-	globalBackfill int
+	Version           = "current"
+	ssmwrapErr        error
+	globalDryRun      bool
+	globalDumpReports bool
+	globalBackfill    int
 )
 
 func main() {
@@ -62,6 +63,12 @@ func main() {
 				EnvVars:     []string{"SHIMESABA_DRY_RUN"},
 				Destination: &globalDryRun,
 			},
+			&cli.BoolFlag{
+				Name:        "dump-reports",
+				Usage:       "dump error budget report",
+				EnvVars:     []string{"SHIMESABA_DUMP_REPORTS"},
+				Destination: &globalDumpReports,
+			},
 			&cli.IntFlag{
 				Name:        "backfill",
 				DefaultText: "3",
@@ -84,6 +91,10 @@ func main() {
 					&cli.BoolFlag{
 						Name:  "dry-run",
 						Usage: "report output stdout and not put mackerel",
+					},
+					&cli.BoolFlag{
+						Name:  "dump-reports",
+						Usage: "dump error budget report",
 					},
 					&cli.IntFlag{
 						Name:  "backfill",
@@ -148,6 +159,7 @@ func run(c *cli.Context) error {
 	}
 	optFns := []func(*shimesaba.Options){
 		shimesaba.DryRunOption(c.Bool("dry-run") || globalDryRun),
+		shimesaba.DumpReportsOption(c.Bool("dump-reports") || globalDumpReports),
 		shimesaba.BackfillOption(backfill),
 	}
 	handler := func(ctx context.Context) error {
