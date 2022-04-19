@@ -15,14 +15,14 @@ type Definition struct {
 	calculate       time.Duration
 	errorBudgetSize float64
 
-	alertObjectives []*AlertObjective
+	AlertBasedSLIs []*AlertBasedSLI
 }
 
 //NewDefinition creates Definition from SLOConfig
 func NewDefinition(cfg *SLOConfig) (*Definition, error) {
-	alertObjectives := make([]*AlertObjective, 0, len(cfg.AlertBasedSLI))
+	AlertBasedSLIs := make([]*AlertBasedSLI, 0, len(cfg.AlertBasedSLI))
 	for _, cfg := range cfg.AlertBasedSLI {
-		alertObjectives = append(alertObjectives, NewAlertObjective(cfg))
+		AlertBasedSLIs = append(AlertBasedSLIs, NewAlertBasedSLI(cfg))
 	}
 	return &Definition{
 		id: cfg.ID,
@@ -34,7 +34,7 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
-		alertObjectives: alertObjectives,
+		AlertBasedSLIs:  AlertBasedSLIs,
 	}, nil
 }
 
@@ -64,8 +64,8 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
-	log.Printf("[debug] alert objective count = %d", len(d.alertObjectives))
-	for _, o := range d.alertObjectives {
+	log.Printf("[debug] alert objective count = %d", len(d.AlertBasedSLIs))
+	for _, o := range d.AlertBasedSLIs {
 		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {
 			return nil, err
@@ -86,10 +86,10 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	return reports, nil
 }
 
-func (d *Definition) AlertObjectives(monitors []*Monitor) []*Monitor {
+func (d *Definition) AlertBasedSLIs(monitors []*Monitor) []*Monitor {
 	matched := make(map[string]*Monitor)
 	for _, m := range monitors {
-		for _, obj := range d.alertObjectives {
+		for _, obj := range d.AlertBasedSLIs {
 			if obj.MatchMonitor(m) {
 				matched[m.ID()] = m
 			}

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAlertObjective(t *testing.T) {
+func TestAlertBasedSLI(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC))
 	defer restore()
 	alerts := shimesaba.Alerts{
@@ -125,7 +125,7 @@ func TestAlertObjective(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
-			obj := shimesaba.NewAlertObjective(c.cfg)
+			obj := shimesaba.NewAlertBasedSLI(c.cfg)
 			actual, err := obj.EvaluateReliabilities(
 				time.Minute,
 				alerts,

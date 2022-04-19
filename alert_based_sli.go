@@ -8,15 +8,15 @@ import (
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
-type AlertObjective struct {
+type AlertBasedSLI struct {
 	cfg *AlertBasedSLIConfig
 }
 
-func NewAlertObjective(cfg *AlertBasedSLIConfig) *AlertObjective {
-	return &AlertObjective{cfg: cfg}
+func NewAlertBasedSLI(cfg *AlertBasedSLIConfig) *AlertBasedSLI {
+	return &AlertBasedSLI{cfg: cfg}
 }
 
-func (o AlertObjective) EvaluateReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
+func (o AlertBasedSLI) EvaluateReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
 	rc := make([]*Reliability, 0)
@@ -44,7 +44,7 @@ func (o AlertObjective) EvaluateReliabilities(timeFrame time.Duration, alerts Al
 	return reliabilities, nil
 }
 
-func (o AlertObjective) matchAlert(alert *Alert) bool {
+func (o AlertBasedSLI) matchAlert(alert *Alert) bool {
 	log.Printf("[debug] try match %s vs %v", alert, o.cfg)
 	if o.MatchMonitor(alert.Monitor) {
 		log.Printf("[debug] match %s", alert)
@@ -53,7 +53,7 @@ func (o AlertObjective) matchAlert(alert *Alert) bool {
 	return false
 }
 
-func (o AlertObjective) MatchMonitor(monitor *Monitor) bool {
+func (o AlertBasedSLI) MatchMonitor(monitor *Monitor) bool {
 	if o.cfg.MonitorID != "" {
 		if monitor.ID() != o.cfg.MonitorID {
 			return false
