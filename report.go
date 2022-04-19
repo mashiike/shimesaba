@@ -64,7 +64,13 @@ func (r *Report) SetTime(upTime time.Duration, failureTime time.Duration, deltaF
 
 // String implements fmt.Stringer
 func (r *Report) String() string {
-	return fmt.Sprintf("definition[%s][%s]<%s~%s> up_time=%s failure_time=%s error_budget=%s(usage:%f)", r.DefinitionID, r.DataPoint, r.TimeFrameStartAt, r.TimeFrameEndAt, r.UpTime, r.FailureTime, r.ErrorBudget, r.ErrorBudgetUsageRate()*100.0)
+	return fmt.Sprintf(
+		"error budget report[id=`%s`,data_point=`%s`]: size=%0.4f[min], remaining=%0.4f[min](%0.1f%%), consumption=%0.4f[min](%0.1f%%)",
+		r.DefinitionID, r.DataPoint.Format(time.RFC3339),
+		r.ErrorBudgetSize.Minutes(),
+		r.ErrorBudget.Minutes(), r.ErrorBudgetUsageRate()*100.0,
+		r.ErrorBudgetConsumption.Minutes(), r.ErrorBudgetConsumptionRate()*100.0,
+	)
 }
 
 // ErrorBudgetUsageRate returns (1.0 - ErrorBudget/ErrorBudgetSize)

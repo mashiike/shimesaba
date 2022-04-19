@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -15,52 +16,6 @@ import (
 )
 
 func TestDefinition(t *testing.T) {
-	metricsConfigs := []struct {
-		cfg          *shimesaba.MetricConfig
-		appendValues []timeValueTuple
-	}{
-		{
-			cfg: &shimesaba.MetricConfig{
-				ID:                  "dummy3",
-				AggregationInterval: "1",
-				AggregationMethod:   "max",
-			},
-			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
-		},
-		{
-			cfg: &shimesaba.MetricConfig{
-				ID:                  "dummy3",
-				AggregationInterval: "1m",
-				AggregationMethod:   "max",
-			},
-			appendValues: loadTupleFromCSV(t, "testdata/dummy3.csv"),
-		},
-		{
-			cfg: &shimesaba.MetricConfig{
-				ID:                  "request_count",
-				AggregationInterval: "1m",
-				AggregationMethod:   "sum",
-			},
-			appendValues: loadTupleFromCSV(t, "testdata/request_count.csv"),
-		},
-		{
-			cfg: &shimesaba.MetricConfig{
-				ID:                  "error_count",
-				AggregationInterval: "1m",
-				AggregationMethod:   "sum",
-				InterpolatedValue:   Float64(0.0),
-			},
-			appendValues: loadTupleFromCSV(t, "testdata/error_count.csv"),
-		},
-	}
-	metrics := make(shimesaba.Metrics)
-	for _, cfg := range metricsConfigs {
-		metric := shimesaba.NewMetric(cfg.cfg)
-		for _, tv := range cfg.appendValues {
-			metric.AppendValue(tv.Time, tv.Value)
-		}
-		metrics.Set(metric)
-	}
 	restore := flextime.Fix(time.Date(2021, 10, 01, 0, 22, 0, 0, time.UTC))
 	defer restore()
 	alerts := shimesaba.Alerts{
@@ -84,152 +39,21 @@ func TestDefinition(t *testing.T) {
 		),
 	}
 	cases := []struct {
-		defCfg   *shimesaba.DefinitionConfig
+		defCfg   *shimesaba.SLOConfig
 		expected []*shimesaba.Report
 	}{
 		{
-			defCfg: &shimesaba.DefinitionConfig{
-				ID:                "test1",
-				ServiceName:       "test",
-				TimeFrame:         "10m",
-				CalculateInterval: "5m",
-				ErrorBudgetSize:   "3m",
-				Objectives: []*shimesaba.ObjectiveConfig{
-					{
-						Expr: "dummy3 < 1.0",
-					},
+			defCfg: &shimesaba.SLOConfig{
+				ID: "alert_and_metric_mixing",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "test",
 				},
-			},
-			expected: []*shimesaba.Report{
-				{
-					DefinitionID: "test1",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "test1",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
-					UpTime:                 8 * time.Minute,
-					FailureTime:            2 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            1 * time.Minute,
-					ErrorBudgetConsumption: 0,
-				},
-				{
-					DefinitionID: "test1",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "test1",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
-					UpTime:                 6 * time.Minute,
-					FailureTime:            4 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            -1 * time.Minute,
-					ErrorBudgetConsumption: 4 * time.Minute,
-				},
-				{
-					DefinitionID: "test1",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "test1",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
-					UpTime:                 5 * time.Minute,
-					FailureTime:            5 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            -2 * time.Minute,
-					ErrorBudgetConsumption: 1 * time.Minute,
-				},
-			},
-		},
-		{
-			defCfg: &shimesaba.DefinitionConfig{
-				ID:                "error_rate",
-				ServiceName:       "test",
-				TimeFrame:         "10m",
+				RollingPeriod:     "10m",
 				CalculateInterval: "5m",
 				ErrorBudgetSize:   0.3,
-				Objectives: []*shimesaba.ObjectiveConfig{
+				AlertBasedSLI: []*shimesaba.AlertBasedSLIConfig{
 					{
-						Expr: "rate(error_count, request_count) <= 0.5",
-					},
-				},
-			},
-			expected: []*shimesaba.Report{
-				{
-					DefinitionID: "error_rate",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "error_rate",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 9, 59, 999999999, time.UTC),
-					UpTime:                 10 * time.Minute,
-					FailureTime:            0 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            3 * time.Minute,
-					ErrorBudgetConsumption: 0,
-				},
-				{
-					DefinitionID: "error_rate",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "error_rate",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 15, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 5, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 14, 59, 999999999, time.UTC),
-					UpTime:                 10 * time.Minute,
-					FailureTime:            0 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            3 * time.Minute,
-					ErrorBudgetConsumption: 0 * time.Minute,
-				},
-				{
-					DefinitionID: "error_rate",
-					Destination: &shimesaba.Destination{
-						ServiceName:  "test",
-						MetricPrefix: "shimesaba",
-						MetricSuffix: "error_rate",
-					},
-					DataPoint:              time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
-					TimeFrameStartAt:       time.Date(2021, 10, 01, 0, 10, 0, 0, time.UTC),
-					TimeFrameEndAt:         time.Date(2021, 10, 01, 0, 19, 59, 999999999, time.UTC),
-					UpTime:                 9 * time.Minute,
-					FailureTime:            1 * time.Minute,
-					ErrorBudgetSize:        3 * time.Minute,
-					ErrorBudget:            2 * time.Minute,
-					ErrorBudgetConsumption: 1 * time.Minute,
-				},
-			},
-		},
-		{
-			defCfg: &shimesaba.DefinitionConfig{
-				ID:                "alert_and_metric_mixing",
-				ServiceName:       "test",
-				TimeFrame:         "10m",
-				CalculateInterval: "5m",
-				ErrorBudgetSize:   0.3,
-				Objectives: []*shimesaba.ObjectiveConfig{
-					{
-						Expr: "rate(error_count, request_count) <= 0.5",
-					},
-					{
-						Alert: &shimesaba.AlertObjectiveConfig{
-							MonitorID: "hogera",
-						},
+						MonitorID: "hogera",
 					},
 				},
 			},
@@ -297,7 +121,7 @@ func TestDefinition(t *testing.T) {
 			require.NoError(t, err)
 			def, err := shimesaba.NewDefinition(c.defCfg)
 			require.NoError(t, err)
-			actual, err := def.CreateReports(context.Background(), metrics, alerts,
+			actual, err := def.CreateReportsWithAlertsAndPeriod(context.Background(), alerts,
 				time.Date(2021, 10, 01, 0, 0, 0, 0, time.UTC),
 				time.Date(2021, 10, 01, 0, 20, 0, 0, time.UTC),
 			)
@@ -316,4 +140,52 @@ func TestDefinition(t *testing.T) {
 		})
 	}
 
+}
+
+func TestSLODefinitionStartAt(t *testing.T) {
+	cases := []struct {
+		now      time.Time
+		backfill int
+		cfg      *shimesaba.SLOConfig
+		expected time.Time
+	}{
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "1d",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1h",
+				ErrorBudgetSize:   0.05,
+			},
+			expected: time.Date(2022, 1, 13, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			now:      time.Date(2022, 1, 14, 3, 13, 23, 999, time.UTC),
+			backfill: 3,
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "365d",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1d",
+				ErrorBudgetSize:   0.05,
+			},
+			expected: time.Date(2021, 1, 11, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for i, c := range cases {
+		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
+			require.NoError(t, c.cfg.Restrict())
+			d, err := shimesaba.NewDefinition(c.cfg)
+			require.NoError(t, err)
+			actual := d.StartAt(c.now, c.backfill)
+			require.EqualValues(t, c.expected, actual)
+		})
+	}
 }

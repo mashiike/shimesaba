@@ -3,7 +3,6 @@ package shimesaba
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -70,7 +69,7 @@ func (alert *Alert) endAt() time.Time {
 	return flextime.Now().Add(time.Minute)
 }
 
-func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilities, error) {
+func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration, enableReassessment bool) (Reliabilities, error) {
 	log.Printf("[debug] EvaluateReliabilities alert=%s", alert)
 	alert.mu.Lock()
 	defer alert.mu.Unlock()
@@ -78,7 +77,7 @@ func (alert *Alert) EvaluateReliabilities(timeFrame time.Duration) (Reliabilitie
 		log.Printf("[debug] return cache alert=%s", alert)
 		return alert.cache, nil
 	}
-	if os.Getenv("SHIMESABA_ENABLE_REASSESSMENT") != "" {
+	if enableReassessment {
 		if reliabilities, ok := alert.Monitor.EvaluateReliabilities(
 			alert.HostID,
 			timeFrame,

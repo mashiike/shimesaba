@@ -24,35 +24,7 @@ func TestAppWithMock(t *testing.T) {
 				expected   map[string]int
 			}{
 				{
-					configFile: "testdata/simple.yaml",
-					expected: map[string]int{
-						"shimesaba.error_budget.latency":                        backfill,
-						"shimesaba.error_budget_consumption.latency":            backfill,
-						"shimesaba.error_budget_consumption_percentage.latency": backfill,
-						"shimesaba.error_budget_percentage.latency":             backfill,
-						"shimesaba.failure_time.latency":                        backfill,
-						"shimesaba.uptime.latency":                              backfill,
-					},
-				},
-				{
-					configFile: "testdata/multiple.yaml",
-					expected: map[string]int{
-						"shimesaba.error_budget.latency":                        backfill,
-						"shimesaba.error_budget_consumption.latency":            backfill,
-						"shimesaba.error_budget_consumption_percentage.latency": backfill,
-						"shimesaba.error_budget_percentage.latency":             backfill,
-						"shimesaba.failure_time.latency":                        backfill,
-						"shimesaba.uptime.latency":                              backfill,
-						"shimesaba.error_budget.check":                          backfill,
-						"shimesaba.error_budget_consumption.check":              backfill,
-						"shimesaba.error_budget_consumption_percentage.check":   backfill,
-						"shimesaba.error_budget_percentage.check":               backfill,
-						"shimesaba.failure_time.check":                          backfill,
-						"shimesaba.uptime.check":                                backfill,
-					},
-				},
-				{
-					configFile: "testdata/alert_source.yaml",
+					configFile: "testdata/app_test.yaml",
 					expected: map[string]int{
 						"shimesaba.error_budget.alerts":                        backfill,
 						"shimesaba.error_budget_consumption.alerts":            backfill,
@@ -72,7 +44,8 @@ func TestAppWithMock(t *testing.T) {
 						logger.Setup(os.Stderr, "info")
 					}()
 					cfg := shimesaba.NewDefaultConfig()
-					cfg.Load(c.configFile)
+					err := cfg.Load(c.configFile)
+					require.NoError(t, err, "load cfg")
 					client := newMockMackerelClient(t)
 					app, err := shimesaba.NewWithMackerelClient(client, cfg)
 					require.NoError(t, err, "create app")
@@ -97,18 +70,14 @@ func TestAppWithMock(t *testing.T) {
 
 type mockMackerelClient struct {
 	shimesaba.MackerelClient
-	hostMetricData    []timeValueTuple
-	serviceMetricData []timeValueTuple
-	posted            []*mackerel.MetricValue
-	t                 *testing.T
+	posted []*mackerel.MetricValue
+	t      *testing.T
 }
 
 func newMockMackerelClient(t *testing.T) *mockMackerelClient {
 	t.Helper()
 	return &mockMackerelClient{
-		hostMetricData:    loadTupleFromCSV(t, "testdata/dummy3.csv"),
-		serviceMetricData: loadTupleFromCSV(t, "testdata/dummy4.csv"),
-		t:                 t,
+		t: t,
 	}
 }
 
@@ -133,40 +102,7 @@ func (m *mockMackerelClient) FindHosts(param *mackerel.FindHostsParam) ([]*macke
 		},
 	}, nil
 }
-func (m *mockMackerelClient) FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error) {
-	require.Equal(m.t, "dummyHostID", hostID)
-	require.Equal(m.t, "custom.alb.response.time_p90", metricName)
-	ret := make([]mackerel.MetricValue, 0)
-	for _, tv := range m.hostMetricData {
-		t := tv.Time.Unix()
-		if t < from || t > to {
-			continue
-		}
-		ret = append(ret, mackerel.MetricValue{
-			Name:  metricName,
-			Time:  t,
-			Value: tv.Value,
-		})
-	}
-	return ret, nil
-}
-func (m *mockMackerelClient) FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error) {
-	require.Equal(m.t, "shimesaba", serviceName)
-	require.Equal(m.t, "component.dummy.response_time", metricName)
-	ret := make([]mackerel.MetricValue, 0)
-	for _, tv := range m.serviceMetricData {
-		t := tv.Time.Unix()
-		if t < from || t > to {
-			continue
-		}
-		ret = append(ret, mackerel.MetricValue{
-			Name:  metricName,
-			Time:  t,
-			Value: tv.Value,
-		})
-	}
-	return ret, nil
-}
+
 func (m *mockMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	require.Equal(m.t, "shimesaba", serviceName)
 	m.posted = append(m.posted, metricValues...)

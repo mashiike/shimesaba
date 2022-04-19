@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"path/filepath"
 	"sort"
 
 	"github.com/Songmu/flextime"
@@ -14,13 +13,8 @@ import (
 
 //App manages life cycle
 type App struct {
-	repo *Repository
-
-	metricConfigs     MetricConfigs
-	definitionConfigs DefinitionConfigs
-
-	cfgPath       string
-	dashboardPath string
+	repo           *Repository
+	SLODefinitions []*Definition
 }
 
 //New creates an app
@@ -31,14 +25,45 @@ func New(apikey string, cfg *Config) (*App, error) {
 
 //NewWithMackerelClient is there to accept mock clients.
 func NewWithMackerelClient(client MackerelClient, cfg *Config) (*App, error) {
+	slo := make([]*Definition, 0, len(cfg.SLO))
+	for _, c := range cfg.SLO {
+		d, err := NewDefinition(c)
+		if err != nil {
+			return nil, err
+		}
+		slo = append(slo, d)
+	}
 	app := &App{
-		repo:              NewRepository(client),
-		metricConfigs:     cfg.Metrics,
-		definitionConfigs: cfg.Definitions,
-		cfgPath:           cfg.configFilePath,
-		dashboardPath:     filepath.Join(cfg.configFilePath, cfg.Dashboard),
+		repo:           NewRepository(client),
+		SLODefinitions: slo,
 	}
 	return app, nil
+}
+
+type Options struct {
+	dryRun      bool
+	backfill    int
+	dumpReports bool
+}
+
+//DryRunOption is an option to output the calculated error budget as standard without posting it to Mackerel.
+func DryRunOption(dryRun bool) func(*Options) {
+	return func(opt *Options) {
+		opt.dryRun = dryRun
+	}
+}
+
+//BackfillOption specifies how many points of data to calculate retroactively from the current time.
+func BackfillOption(count int) func(*Options) {
+	return func(opt *Options) {
+		opt.backfill = count
+	}
+}
+
+func DumpReportsOption(dump bool) func(*Options) {
+	return func(opt *Options) {
+		opt.dumpReports = dump
+	}
 }
 
 //Run performs the calculation of the error bar calculation
@@ -65,33 +90,13 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	if opts.backfill <= 0 {
 		return errors.New("backfill must over 0")
 	}
-	log.Printf("[debug] metricConfigs %#v", app.metricConfigs)
 	now := flextime.Now()
-	startAt := app.definitionConfigs.StartAt(now, opts.backfill)
-	log.Printf("[info] fetch metric range %s ~ %s", startAt, now)
-	metrics, err := repo.FetchMetrics(ctx, app.metricConfigs, startAt, now)
-	if err != nil {
-		return err
-	}
-	log.Println("[info] fetched metrics", metrics)
-	log.Printf("[info] fetch alerts range %s ~ %s", startAt, now)
-	alerts, err := repo.FetchAlerts(ctx, startAt, now)
-	if err != nil {
-		return err
-	}
-	log.Println("[info] fetched alerts", len(alerts))
-	for _, defCfg := range app.definitionConfigs {
-		d, err := NewDefinition(defCfg)
+
+	for _, d := range app.SLODefinitions {
+		log.Printf("[info] serice level objective[id=%s]: start create reports \n", d.ID())
+		reports, err := d.CreateReports(ctx, repo, now, opts.backfill)
 		if err != nil {
-			return err
-		}
-		log.Printf("[info] check objectives[%s]\n", d.ID())
-		reports, err := d.CreateReports(ctx, metrics, alerts,
-			defCfg.StartAt(now, opts.backfill),
-			now,
-		)
-		if err != nil {
-			return fmt.Errorf("objective[%s] create report failed: %w", d.ID(), err)
+			return fmt.Errorf("serice level objective[id=%s]: create report faileds: %w", d.ID(), err)
 		}
 		if len(reports) > opts.backfill {
 			sort.Slice(reports, func(i, j int) bool {
@@ -103,11 +108,17 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 			}
 			reports = reports[n:]
 		}
-
-		log.Printf("[info] save reports[%s]\n", d.ID())
+		log.Printf("[info] serice level objective[id=%s]: finish create reports \n", d.ID())
+		if opts.dumpReports {
+			for _, report := range reports {
+				log.Printf("[info] %s", report)
+			}
+		}
+		log.Printf("[info] serice level objective[id=%s]: start save reports \n", d.ID())
 		if err := repo.SaveReports(ctx, reports); err != nil {
 			return fmt.Errorf("objective[%s] save report failed: %w", d.ID(), err)
 		}
+		log.Printf("[info] serice level objective[id=%s]: finish save reports \n", d.ID())
 	}
 	runTime := flextime.Now().Sub(now)
 	log.Printf("[info] run successes. run time:%s\n", runTime)

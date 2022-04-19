@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAlertObjective(t *testing.T) {
+func TestAlertBasedSLI(t *testing.T) {
 	restore := flextime.Fix(time.Date(2021, time.October, 1, 0, 6, 0, 0, time.UTC))
 	defer restore()
 	alerts := shimesaba.Alerts{
@@ -52,11 +52,11 @@ func TestAlertObjective(t *testing.T) {
 		),
 	}
 	cases := []struct {
-		cfg      *shimesaba.AlertObjectiveConfig
+		cfg      *shimesaba.AlertBasedSLIConfig
 		expected map[time.Time]bool
 	}{
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorID: "hogera",
 			},
 			expected: map[time.Time]bool{
@@ -67,7 +67,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNameSuffix: "hoge",
 			},
 			expected: map[time.Time]bool{
@@ -78,7 +78,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorID: "fugara",
 			},
 			expected: map[time.Time]bool{
@@ -91,7 +91,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNamePrefix: "SLO",
 			},
 			expected: map[time.Time]bool{
@@ -104,7 +104,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNamePrefix: "SLO",
 				MonitorType:       "Expression",
 			},
@@ -116,7 +116,7 @@ func TestAlertObjective(t *testing.T) {
 			},
 		},
 		{
-			cfg: &shimesaba.AlertObjectiveConfig{
+			cfg: &shimesaba.AlertBasedSLIConfig{
 				MonitorNameSuffix: "hoge",
 				MonitorType:       "service",
 			},
@@ -125,7 +125,7 @@ func TestAlertObjective(t *testing.T) {
 	}
 	for i, c := range cases {
 		t.Run(fmt.Sprintf("case.%d", i), func(t *testing.T) {
-			obj := shimesaba.NewAlertObjective(c.cfg)
+			obj := shimesaba.NewAlertBasedSLI(c.cfg)
 			actual, err := obj.EvaluateReliabilities(
 				time.Minute,
 				alerts,

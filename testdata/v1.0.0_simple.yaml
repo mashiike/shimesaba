@@ -1,0 +1,22 @@
+required_version: ">=1.0.0"
+
+rolling_period: 28d
+calculate_interval: 1h
+destination:
+  service_name:  prod
+error_budget_size: 40m
+
+slo:
+  - id: availability
+    alert_based_sli:
+      - monitor_name_suffix: api.example.com
+        monitor_type: external
+  - id: latency
+    alert_based_sli:
+      - monitor_name: ALB target p99 over 1.0 sec
+        monitor_type: host
+  - id: quality
+    alert_based_sli:
+      - monitor_name_prefix: "quality service metric"
+        monitor_type: service
+

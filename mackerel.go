@@ -1,10 +1,7 @@
 package shimesaba
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -12,7 +9,6 @@ import (
 
 	"github.com/Songmu/flextime"
 	mackerel "github.com/mackerelio/mackerel-client-go"
-	"github.com/mashiike/shimesaba/internal/timeutils"
 	retry "github.com/shogo82148/go-retry"
 )
 
@@ -23,11 +19,6 @@ type MackerelClient interface {
 	FetchHostMetricValues(hostID string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	FetchServiceMetricValues(serviceName string, metricName string, from int64, to int64) ([]mackerel.MetricValue, error)
 	PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error
-
-	FindDashboards() ([]*mackerel.Dashboard, error)
-	FindDashboard(dashboardID string) (*mackerel.Dashboard, error)
-	CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error)
-	UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error)
 
 	FindWithClosedAlerts() (*mackerel.AlertsResp, error)
 	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
@@ -41,6 +32,11 @@ type Repository struct {
 
 	mu          sync.Mutex
 	monitorByID map[string]*Monitor
+
+	alertMu        sync.Mutex
+	alertCache     Alerts
+	alertCurrentAt time.Time
+	alertNextID    string
 }
 
 // NewRepository creates Repository
@@ -48,6 +44,7 @@ func NewRepository(client MackerelClient) *Repository {
 	return &Repository{
 		client:      client,
 		monitorByID: make(map[string]*Monitor),
+		alertCache:  make(Alerts, 0, 100),
 	}
 }
 
@@ -62,84 +59,6 @@ func (repo *Repository) GetOrgName(ctx context.Context) (string, error) {
 const (
 	fetchMetricMetricmit = 6 * time.Hour
 )
-
-// FetchMetric gets Metric using MetricConfig
-func (repo *Repository) FetchMetric(ctx context.Context, cfg *MetricConfig, startAt time.Time, endAt time.Time) (*Metric, error) {
-	iter := timeutils.NewIterator(startAt, endAt, fetchMetricMetricmit)
-	m := NewMetric(cfg)
-
-	var fetchMetricValues func(int64, int64) ([]mackerel.MetricValue, error)
-	switch cfg.Type {
-	case HostMetric:
-		hosts, err := repo.client.FindHosts(&mackerel.FindHostsParam{
-			Service: cfg.ServiceName,
-			Roles:   cfg.Roles,
-			Name:    cfg.HostName,
-		})
-		if err != nil {
-			return nil, err
-		}
-		fetchMetricValues = func(from, to int64) ([]mackerel.MetricValue, error) {
-			values := make([]mackerel.MetricValue, 0)
-			for _, host := range hosts {
-				log.Printf("[debug] call MackerelClient.FetchHostMetricValues(%s,%s,%s,%s)", host.ID, cfg.Name, time.Unix(from, 0), time.Unix(to, 0))
-				v, err := repo.client.FetchHostMetricValues(host.ID, cfg.Name, from, to)
-				if err != nil {
-					return nil, err
-				}
-				values = append(values, v...)
-			}
-			return values, nil
-		}
-	case ServiceMetric:
-		fetchMetricValues = func(from, to int64) ([]mackerel.MetricValue, error) {
-			log.Printf("[debug] call MackerelClient.FetchServiceMetricValues(%s,%s,%s,%s)", cfg.ServiceName, cfg.Name, time.Unix(from, 0), time.Unix(to, 0))
-			return repo.client.FetchServiceMetricValues(cfg.ServiceName, cfg.Name, from, to)
-		}
-	default:
-		return nil, fmt.Errorf("metric type `%s` is unknown", cfg.Type)
-	}
-
-	for iter.HasNext() {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-		curStartat, curEndAt := iter.Next()
-		values, err := fetchMetricValues(curStartat.Unix(), curEndAt.Unix())
-		if err != nil {
-			return nil, fmt.Errorf("metric=%s :%w", m.ID(), err)
-		}
-		for _, value := range values {
-			if err := m.AppendValue(time.Unix(value.Time, 0), value.Value); err != nil {
-				return nil, fmt.Errorf("metric=%s :%w", m.ID(), err)
-			}
-		}
-		time.Sleep(500 * time.Microsecond)
-	}
-	return m, nil
-}
-
-// FetchMetrics gets metrics togethers
-func (repo *Repository) FetchMetrics(ctx context.Context, cfgs MetricConfigs, startAt time.Time, endAt time.Time) (Metrics, error) {
-	ms := make(Metrics)
-	for _, cfg := range cfgs {
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		default:
-		}
-		log.Printf("[info] start fetch metric_id=%s\n", cfg.ID)
-		m, err := repo.FetchMetric(ctx, cfg, startAt, endAt)
-		log.Printf("[info] finished fetch metric_id=%s\n", cfg.ID)
-		if err != nil {
-			return nil, err
-		}
-		ms.Set(m)
-	}
-	return ms, nil
-}
 
 // SaveReports posts Reports to Mackerel
 func (repo *Repository) SaveReports(ctx context.Context, reports []*Report) error {
@@ -180,16 +99,16 @@ func (repo *Repository) postServiceMetricValues(ctx context.Context, service str
 		if size < end {
 			end = size
 		}
-		log.Printf("[info] PostServiceMetricValues %s values[%d:%d]\n", service, start, end)
+		log.Printf("[debug] PostServiceMetricValues to Mackerel  %s values[%d:%d]\n", service, start, end)
 		err := policy.Do(ctx, func() error {
 			err := repo.client.PostServiceMetricValues(service, values[start:end])
 			if err != nil {
-				log.Printf("[warn] PostServiceMetricValues retry because: %s\n", err)
+				log.Printf("[warn] PostServiceMetricValues to Mackerel failed, retry because: %s\n", err)
 			}
 			return err
 		})
 		if err != nil {
-			log.Printf("[warn] failed to PostServiceMetricValues service:%s %s\n", service, err)
+			log.Printf("[warn] PostServiceMetricValues to Mackerel failed:%s %s\n", service, err)
 		}
 	}
 	return nil
@@ -230,114 +149,80 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 	return values
 }
 
-//Dashboard is alias of mackerel.Dashboard
-type Dashboard = mackerel.Dashboard
-
-var ErrDashboardNotFound = errors.New("dashboard not found")
-
-// FindDashboardID get Mackerel Dashboard ID from url or id
-func (repo *Repository) FindDashboardID(dashboardIDOrURL string) (string, error) {
-	dashboards, err := repo.client.FindDashboards()
-	if err != nil {
-		return "", err
-	}
-	for _, d := range dashboards {
-		if d.ID == dashboardIDOrURL {
-			return d.ID, nil
-		}
-		if d.URLPath == dashboardIDOrURL {
-			return d.ID, nil
-		}
-	}
-	return "", ErrDashboardNotFound
-}
-
-// FindDashboard get Mackerel Dashboard
-func (repo *Repository) FindDashboard(dashboardIDOrURL string) (*Dashboard, error) {
-	id, err := repo.FindDashboardID(dashboardIDOrURL)
-	if err != nil {
-		return nil, err
-	}
-	//Get Widgets
-	dashboard, err := repo.client.FindDashboard(id)
-	if err != nil {
-		return nil, err
-	}
-
-	dashboard.ID = ""
-	dashboard.CreatedAt = 0
-	dashboard.UpdatedAt = 0
-	return dashboard, nil
-}
-
-// SaveDashboard post Mackerel Dashboard
-func (repo *Repository) SaveDashboard(ctx context.Context, dashboard *Dashboard) error {
-	id, err := repo.FindDashboardID(dashboard.URLPath)
-	if err == nil {
-		log.Printf("[debug] update dashboard id=%s url=%s", id, dashboard.URLPath)
-		after, err := repo.client.UpdateDashboard(id, dashboard)
-		if err != nil {
-			return err
-		}
-		log.Printf("[info] updated dashboard id=%s url=%s updated_at=%s", after.ID, after.URLPath, time.Unix(after.UpdatedAt, 0).String())
-	}
-	if err == ErrDashboardNotFound {
-		log.Printf("[debug] create dashboard url=%s", dashboard.URLPath)
-		after, err := repo.client.CreateDashboard(dashboard)
-		if err != nil {
-			return err
-		}
-		log.Printf("[info] updated dashboard id=%s url=%s updated_at=%s", after.ID, after.URLPath, time.Unix(after.CreatedAt, 0).String())
-	}
-	return err
-
-}
-
 // FetchAlerts retrieves alerts for a specified period of time
 func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error) {
+	repo.alertMu.Lock()
+	defer repo.alertMu.Unlock()
+
+	if len(repo.alertCache) == 0 {
+		if err := repo.fetchAlertsInitial(ctx); err != nil {
+			return nil, err
+		}
+	}
+	for startAt.Before(repo.alertCurrentAt) && repo.alertNextID != "" {
+		if err := repo.fetchAlertsIncremental(ctx); err != nil {
+			return nil, err
+		}
+	}
 	alerts := make(Alerts, 0, 100)
-	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
-	resp, err := repo.client.FindWithClosedAlerts()
-	if err != nil {
-		return nil, err
-	}
-	converted, err := repo.convertAlerts(resp, endAt)
-	if err != nil {
-		return nil, err
-	}
-	alerts = append(alerts, converted...)
-	currentAt := flextime.Now()
-	if len(alerts) != 0 {
-		currentAt = alerts[len(alerts)-1].OpenedAt
-	}
-	for startAt.Before(currentAt) && resp.NextID != "" {
-		log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", resp.NextID)
-		resp, err = repo.client.FindWithClosedAlertsByNextID(resp.NextID)
-		if err != nil {
-			return nil, err
+	for _, alert := range repo.alertCache {
+		if alert.OpenedAt.After(endAt) {
+			continue
 		}
-		converted, err := repo.convertAlerts(resp, endAt)
-		if err != nil {
-			return nil, err
+		if alert.OpenedAt.Before(startAt) {
+			break
 		}
-		alerts = append(alerts, converted...)
-		if len(alerts) != 0 {
-			currentAt = alerts[len(alerts)-1].OpenedAt
-		}
+		alerts = append(alerts, alert)
 	}
 	return alerts, nil
 }
 
-func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp, endAt time.Time) ([]*Alert, error) {
+func (repo *Repository) fetchAlertsInitial(ctx context.Context) error {
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlerts()")
+	resp, err := repo.client.FindWithClosedAlerts()
+	if err != nil {
+		return err
+	}
+	converted, err := repo.convertAlerts(resp)
+	if err != nil {
+		return err
+	}
+	repo.alertCache = append(repo.alertCache, converted...)
+	currentAt := flextime.Now()
+	if len(repo.alertCache) != 0 {
+		currentAt = repo.alertCache[len(repo.alertCache)-1].OpenedAt
+	}
+	repo.alertCurrentAt = currentAt
+	repo.alertNextID = resp.NextID
+	return nil
+}
+
+func (repo *Repository) fetchAlertsIncremental(ctx context.Context) error {
+	log.Printf("[debug] call MackerelClient.FindWithClosedAlertsByNextID(%s)", repo.alertNextID)
+	resp, err := repo.client.FindWithClosedAlertsByNextID(repo.alertNextID)
+	if err != nil {
+		return err
+	}
+	converted, err := repo.convertAlerts(resp)
+	if err != nil {
+		return err
+	}
+	repo.alertCache = append(repo.alertCache, converted...)
+
+	if len(converted) != 0 {
+		repo.alertCurrentAt = converted[len(converted)-1].OpenedAt
+		repo.alertNextID = resp.NextID
+	}
+	return nil
+}
+
+func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp) ([]*Alert, error) {
 	alerts := make([]*Alert, 0, len(resp.Alerts))
 	for _, alert := range resp.Alerts {
 		if alert.MonitorID == "" {
 			continue
 		}
 		openedAt := time.Unix(alert.OpenedAt, 0)
-		if openedAt.After(endAt) {
-			continue
-		}
 		var closedAt *time.Time
 		if alert.Status == "OK" {
 			tmpClosedAt := time.Unix(alert.ClosedAt, 0)
@@ -539,35 +424,7 @@ type DryRunMackerelClient struct {
 
 func (c DryRunMackerelClient) PostServiceMetricValues(serviceName string, metricValues []*mackerel.MetricValue) error {
 	for _, value := range metricValues {
-		log.Printf("[notice] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
+		log.Printf("[debug] **DRY RUN** action=PostServiceMetricValue, service=`%s`, metricName=`%s`, time=`%s`, value=`%f` ", serviceName, value.Name, time.Unix(value.Time, 0).UTC(), value.Value)
 	}
 	return nil
-}
-
-func (c DryRunMackerelClient) CreateDashboard(param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
-	dashboard, err := dashboardToString(param)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[notice] **DRY RUN** action=CreateDashboard, dashboard=%s", dashboard)
-	return param, nil
-}
-
-func (c DryRunMackerelClient) UpdateDashboard(dashboardID string, param *mackerel.Dashboard) (*mackerel.Dashboard, error) {
-	dashboard, err := dashboardToString(param)
-	if err != nil {
-		return nil, err
-	}
-	log.Printf("[notice] **DRY RUN** action=UpdateDashboard, dashboard_id=`%s`, dashboard=%s", dashboardID, dashboard)
-	return param, nil
-}
-
-func dashboardToString(param *mackerel.Dashboard) (string, error) {
-	var buf bytes.Buffer
-	encoder := json.NewEncoder(&buf)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(param); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
 }
