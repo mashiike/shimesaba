@@ -1,8 +1,7 @@
 required_version: ">=1.0.0"
 
 rolling_period: 28d
-destination:
-  calculate_interval: 1h
+calculate_interval: 1h
 error_budget_size: 0.01%
 
 slo:

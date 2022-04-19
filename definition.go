@@ -15,7 +15,7 @@ type Definition struct {
 	calculate       time.Duration
 	errorBudgetSize float64
 
-	AlertBasedSLIs []*AlertBasedSLI
+	alertBasedSLIs []*AlertBasedSLI
 }
 
 //NewDefinition creates Definition from SLOConfig
@@ -34,7 +34,7 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
-		AlertBasedSLIs:  AlertBasedSLIs,
+		alertBasedSLIs:  AlertBasedSLIs,
 	}, nil
 }
 
@@ -64,8 +64,8 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
 	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
-	log.Printf("[debug] alert objective count = %d", len(d.AlertBasedSLIs))
-	for _, o := range d.AlertBasedSLIs {
+	log.Printf("[debug] alert objective count = %d", len(d.alertBasedSLIs))
+	for _, o := range d.alertBasedSLIs {
 		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {
 			return nil, err
@@ -89,7 +89,7 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 func (d *Definition) AlertBasedSLIs(monitors []*Monitor) []*Monitor {
 	matched := make(map[string]*Monitor)
 	for _, m := range monitors {
-		for _, obj := range d.AlertBasedSLIs {
+		for _, obj := range d.alertBasedSLIs {
 			if obj.MatchMonitor(m) {
 				matched[m.ID()] = m
 			}

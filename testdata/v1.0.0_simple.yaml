@@ -1,9 +1,9 @@
 required_version: ">=1.0.0"
 
 rolling_period: 28d
+calculate_interval: 1h
 destination:
   service_name:  prod
-  calculate_interval: 1h
 error_budget_size: 40m
 
 slo:
