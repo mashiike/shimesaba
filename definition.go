@@ -33,7 +33,7 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 		},
 		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
-		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
+		errorBudgetSize: cfg.ErrorBudgetSizePercentage(),
 		alertBasedSLIs:  AlertBasedSLIs,
 	}, nil
 }
