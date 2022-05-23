@@ -122,6 +122,11 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 		Value: report.ErrorBudget.Minutes(),
 	})
 	values = append(values, &mackerel.MetricValue{
+		Name:  report.Destination.ErrorBudgetRemainingPercentageMetricName(),
+		Time:  report.DataPoint.Unix(),
+		Value: (1.0 - report.ErrorBudgetUsageRate()) * 100.0,
+	})
+	values = append(values, &mackerel.MetricValue{
 		Name:  report.Destination.ErrorBudgetPercentageMetricName(),
 		Time:  report.DataPoint.Unix(),
 		Value: report.ErrorBudgetUsageRate() * 100.0,

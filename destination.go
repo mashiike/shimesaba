@@ -12,6 +12,10 @@ func (d *Destination) ErrorBudgetMetricName() string {
 	return fmt.Sprintf("%s.error_budget.%s", d.MetricPrefix, d.MetricSuffix)
 }
 
+func (d *Destination) ErrorBudgetRemainingPercentageMetricName() string {
+	return fmt.Sprintf("%s.error_budget_remaining_percentage.%s", d.MetricPrefix, d.MetricSuffix)
+}
+
 func (d *Destination) ErrorBudgetPercentageMetricName() string {
 	return fmt.Sprintf("%s.error_budget_percentage.%s", d.MetricPrefix, d.MetricSuffix)
 }
