@@ -122,7 +122,7 @@ func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
 			values = append(values, &mackerel.MetricValue{
 				Name:  report.Destination.MetricName(metricType),
 				Time:  report.DataPoint.Unix(),
-				Value: report.ErrorBudget.Minutes(),
+				Value: report.GetDestinationMetricValue(metricType),
 			})
 		}
 	}
