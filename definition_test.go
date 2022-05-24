@@ -135,6 +135,19 @@ func TestDefinition(t *testing.T) {
 			for _, e := range c.expected {
 				bs, _ := json.MarshalIndent(e, "", "  ")
 				t.Log(string(bs))
+				if e.Destination.MetricTypeNames == nil {
+					e.Destination.MetricTypeNames = make(map[shimesaba.DestinationMetricType]string)
+					for _, metricType := range shimesaba.DestinationMetricTypeValues() {
+						e.Destination.MetricTypeNames[metricType] = metricType.String()
+					}
+				}
+				if e.Destination.MetricTypeEnabled == nil {
+					e.Destination.MetricTypeEnabled = make(map[shimesaba.DestinationMetricType]bool)
+					for _, metricType := range shimesaba.DestinationMetricTypeValues() {
+						e.Destination.MetricTypeEnabled[metricType] = metricType.DefaultEnabled()
+					}
+				}
+
 			}
 			require.EqualValues(t, c.expected, actual)
 		})

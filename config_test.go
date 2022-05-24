@@ -118,7 +118,7 @@ func TestSLOConfigErrorBudgetSize(t *testing.T) {
 			err := c.cfg.Restrict()
 			if !c.exceptedErr {
 				require.NoError(t, err)
-				require.InEpsilon(t, c.expected, c.cfg.ErrorBudgetSizeParcentage(), 0.01)
+				require.InEpsilon(t, c.expected, c.cfg.ErrorBudgetSizePercentage(), 0.01)
 			} else {
 				require.Error(t, err)
 			}

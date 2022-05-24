@@ -115,37 +115,17 @@ func (repo *Repository) postServiceMetricValues(ctx context.Context, service str
 }
 
 func newMackerelMetricValuesFromReport(report *Report) []*mackerel.MetricValue {
-	values := make([]*mackerel.MetricValue, 0, 5)
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.ErrorBudgetMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.ErrorBudget.Minutes(),
-	})
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.ErrorBudgetPercentageMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.ErrorBudgetUsageRate() * 100.0,
-	})
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.ErrorBudgetConsumptionMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.ErrorBudgetConsumption.Minutes(),
-	})
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.ErrorBudgetConsumptionPercentageMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.ErrorBudgetConsumptionRate() * 100.0,
-	})
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.UpTimeMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.UpTime.Minutes(),
-	})
-	values = append(values, &mackerel.MetricValue{
-		Name:  report.Destination.FailureMetricName(),
-		Time:  report.DataPoint.Unix(),
-		Value: report.FailureTime.Minutes(),
-	})
+	metricTypes := DestinationMetricTypeValues()
+	values := make([]*mackerel.MetricValue, 0, len(metricTypes))
+	for _, metricType := range metricTypes {
+		if report.Destination.MetricEnabled(metricType) {
+			values = append(values, &mackerel.MetricValue{
+				Name:  report.Destination.MetricName(metricType),
+				Time:  report.DataPoint.Unix(),
+				Value: report.GetDestinationMetricValue(metricType),
+			})
+		}
+	}
 	return values
 }
 

@@ -25,15 +25,11 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 		AlertBasedSLIs = append(AlertBasedSLIs, NewAlertBasedSLI(cfg))
 	}
 	return &Definition{
-		id: cfg.ID,
-		destination: &Destination{
-			ServiceName:  cfg.Destination.ServiceName,
-			MetricPrefix: cfg.Destination.MetricPrefix,
-			MetricSuffix: cfg.Destination.MetricSuffix,
-		},
+		id:              cfg.ID,
+		destination:     NewDestination(cfg.Destination),
 		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
-		errorBudgetSize: cfg.ErrorBudgetSizeParcentage(),
+		errorBudgetSize: cfg.ErrorBudgetSizePercentage(),
 		alertBasedSLIs:  AlertBasedSLIs,
 	}, nil
 }
@@ -62,7 +58,7 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	startAt = startAt.Truncate(d.calculate)
 	endAt = endAt.Add(+time.Nanosecond).Truncate(d.calculate).Add(-time.Nanosecond)
 	log.Printf("[debug] truncate report range = %s ~ %s", startAt, endAt)
-	log.Printf("[debug] timeFrame = %s, calcurateInterval = %s", d.rollingPeriod, d.calculate)
+	log.Printf("[debug] timeFrame = %s, calculateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
 	log.Printf("[debug] alert based SLI count = %d", len(d.alertBasedSLIs))
 	for _, o := range d.alertBasedSLIs {

@@ -35,15 +35,21 @@ type SLOConfig struct {
 	CalculateInterval string                 `yaml:"calculate_interval" json:"calculate_interval"`
 
 	rollingPeriod             time.Duration
-	errorBudgetSizeParcentage float64
+	errorBudgetSizePercentage float64
 	calculateInterval         time.Duration
 }
 
 // DestinationConfig is a configuration for submitting service metrics to Mackerel
 type DestinationConfig struct {
-	ServiceName  string `json:"service_name" yaml:"service_name"`
-	MetricPrefix string `json:"metric_prefix" yaml:"metric_prefix"`
-	MetricSuffix string `json:"metric_suffix" yaml:"metric_suffix"`
+	ServiceName  string                              `json:"service_name" yaml:"service_name"`
+	MetricPrefix string                              `json:"metric_prefix" yaml:"metric_prefix"`
+	MetricSuffix string                              `json:"metric_suffix" yaml:"metric_suffix"`
+	Metrics      map[string]*DestinationMetricConfig `json:"metrics" yaml:"metrics"`
+}
+
+type DestinationMetricConfig struct {
+	MetricTypeName string `json:"metric_type_name,omitempty" yaml:"metric_type_name,omitempty"`
+	Enabled        *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
 type AlertBasedSLIConfig struct {
@@ -138,9 +144,9 @@ func (c *SLOConfig) Restrict() error {
 		return fmt.Errorf("destination %w", err)
 	}
 
-	if errorBudgetSizeParcentage, ok := c.ErrorBudgetSize.(float64); ok {
-		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizeParcentage*100.0)
-		c.errorBudgetSizeParcentage = errorBudgetSizeParcentage
+	if errorBudgetSizePercentage, ok := c.ErrorBudgetSize.(float64); ok {
+		log.Printf("[warn] make sure to set it in m with units. example %f%%", errorBudgetSizePercentage*100.0)
+		c.errorBudgetSizePercentage = errorBudgetSizePercentage
 	}
 	if errorBudgetSizeString, ok := c.ErrorBudgetSize.(string); ok {
 		if strings.ContainsRune(errorBudgetSizeString, '%') {
@@ -148,7 +154,7 @@ func (c *SLOConfig) Restrict() error {
 			if err != nil {
 				return fmt.Errorf("error_budget can not parse as percentage: %w", err)
 			}
-			c.errorBudgetSizeParcentage = value / 100.0
+			c.errorBudgetSizePercentage = value / 100.0
 		} else {
 			errorBudgetSizeDuration, err := timeutils.ParseDuration(errorBudgetSizeString)
 			if err != nil {
@@ -157,10 +163,10 @@ func (c *SLOConfig) Restrict() error {
 			if errorBudgetSizeDuration >= c.rollingPeriod || errorBudgetSizeDuration == 0 {
 				return fmt.Errorf("error_budget must between %s and 0m", c.rollingPeriod)
 			}
-			c.errorBudgetSizeParcentage = float64(errorBudgetSizeDuration) / float64(c.rollingPeriod)
+			c.errorBudgetSizePercentage = float64(errorBudgetSizeDuration) / float64(c.rollingPeriod)
 		}
 	}
-	if c.errorBudgetSizeParcentage >= 1.0 || c.errorBudgetSizeParcentage <= 0.0 {
+	if c.errorBudgetSizePercentage >= 1.0 || c.errorBudgetSizePercentage <= 0.0 {
 		return errors.New("error_budget must between 1.0 and 0.0")
 	}
 
@@ -200,7 +206,33 @@ func (c *DestinationConfig) Restrict(sloID string) error {
 		log.Printf("[debug] metric_suffix is empty, fallback %s", sloID)
 		c.MetricSuffix = sloID
 	}
+	if c.Metrics == nil {
+		c.Metrics = make(map[string]*DestinationMetricConfig)
+	}
+	keys := DestinationMetricTypeValues()
+	for _, key := range keys {
+		metricCfg, ok := c.Metrics[key.ID()]
+		if !ok {
+			metricCfg = &DestinationMetricConfig{}
+		}
+		if err := metricCfg.Restrict(key); err != nil {
+			return fmt.Errorf("metrics `%s`: %w", key.ID(), err)
+		}
+		c.Metrics[key.ID()] = metricCfg
+	}
 
+	return nil
+}
+
+// Restrict restricts a definition configuration.
+func (c *DestinationMetricConfig) Restrict(t DestinationMetricType) error {
+	if c.MetricTypeName == "" {
+		c.MetricTypeName = t.DefaultTypeName()
+	}
+	if c.Enabled == nil {
+		enabled := t.DefaultEnabled()
+		c.Enabled = &enabled
+	}
 	return nil
 }
 
@@ -240,7 +272,7 @@ func (c *SLOConfig) Merge(o *SLOConfig) *SLOConfig {
 	return ret
 }
 
-// Merge merges SLOConfig together
+// Merge merges DestinationConfig together
 func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 	if o == nil {
 		o = &DestinationConfig{}
@@ -249,6 +281,36 @@ func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 		ServiceName:  coalesceString(o.ServiceName, c.ServiceName),
 		MetricPrefix: coalesceString(o.MetricPrefix, c.MetricPrefix),
 		MetricSuffix: coalesceString(o.MetricSuffix, c.MetricSuffix),
+	}
+	keys := DestinationMetricTypeValues()
+	metrics := make(map[string]*DestinationMetricConfig, len(keys))
+	base := c.Metrics
+	if base == nil {
+		base = make(map[string]*DestinationMetricConfig)
+	}
+	if o.Metrics != nil {
+		for _, key := range keys {
+			metricCfg, ok := base[key.ID()]
+			if !ok {
+				metricCfg = &DestinationMetricConfig{}
+			}
+			metrics[key.ID()] = metricCfg.Merge(o.Metrics[key.ID()])
+		}
+	} else {
+		metrics = base
+	}
+	ret.Metrics = metrics
+	return ret
+}
+
+// Merge merges DestinationMetricConfig together
+func (c *DestinationMetricConfig) Merge(o *DestinationMetricConfig) *DestinationMetricConfig {
+	if o == nil {
+		o = &DestinationMetricConfig{}
+	}
+	ret := &DestinationMetricConfig{
+		MetricTypeName: coalesceString(o.MetricTypeName, c.MetricTypeName),
+		Enabled:        coalesce(o.Enabled, c.Enabled),
 	}
 	return ret
 }
@@ -282,8 +344,8 @@ func (c *SLOConfig) DurationCalculate() time.Duration {
 	return c.calculateInterval
 }
 
-func (c *SLOConfig) ErrorBudgetSizeParcentage() float64 {
-	return c.errorBudgetSizeParcentage
+func (c *SLOConfig) ErrorBudgetSizePercentage() float64 {
+	return c.errorBudgetSizePercentage
 }
 
 func coalesceString(strs ...string) string {
@@ -293,4 +355,15 @@ func coalesceString(strs ...string) string {
 		}
 	}
 	return ""
+}
+
+func coalesce[T any](elements ...*T) *T {
+	for _, element := range elements {
+		if element != nil {
+			var ret T
+			ret = *element
+			return &ret
+		}
+	}
+	return nil
 }

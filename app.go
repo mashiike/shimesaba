@@ -93,10 +93,10 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 	now := flextime.Now()
 
 	for _, d := range app.SLODefinitions {
-		log.Printf("[info] serice level objective[id=%s]: start create reports \n", d.ID())
+		log.Printf("[info] service level objective[id=%s]: start create reports \n", d.ID())
 		reports, err := d.CreateReports(ctx, repo, now, opts.backfill)
 		if err != nil {
-			return fmt.Errorf("serice level objective[id=%s]: create report faileds: %w", d.ID(), err)
+			return fmt.Errorf("service level objective[id=%s]: create report faileds: %w", d.ID(), err)
 		}
 		if len(reports) > opts.backfill {
 			sort.Slice(reports, func(i, j int) bool {
@@ -108,17 +108,17 @@ func (app *App) Run(ctx context.Context, optFns ...func(*Options)) error {
 			}
 			reports = reports[n:]
 		}
-		log.Printf("[info] serice level objective[id=%s]: finish create reports \n", d.ID())
+		log.Printf("[info] service level objective[id=%s]: finish create reports \n", d.ID())
 		if opts.dumpReports {
 			for _, report := range reports {
 				log.Printf("[info] %s", report)
 			}
 		}
-		log.Printf("[info] serice level objective[id=%s]: start save reports \n", d.ID())
+		log.Printf("[info] service level objective[id=%s]: start save reports \n", d.ID())
 		if err := repo.SaveReports(ctx, reports); err != nil {
 			return fmt.Errorf("objective[%s] save report failed: %w", d.ID(), err)
 		}
-		log.Printf("[info] serice level objective[id=%s]: finish save reports \n", d.ID())
+		log.Printf("[info] service level objective[id=%s]: finish save reports \n", d.ID())
 	}
 	runTime := flextime.Now().Sub(now)
 	log.Printf("[info] run successes. run time:%s\n", runTime)

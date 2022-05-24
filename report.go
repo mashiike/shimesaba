@@ -115,3 +115,23 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(d)
 }
+
+func (r *Report) GetDestinationMetricValue(metricType DestinationMetricType) float64 {
+	switch metricType {
+	case ErrorBudget:
+		return r.ErrorBudget.Minutes()
+	case ErrorBudgetRemainingPercentage:
+		return (1.0 - r.ErrorBudgetUsageRate()) * 100.0
+	case ErrorBudgetPercentage:
+		return r.ErrorBudgetUsageRate() * 100.0
+	case ErrorBudgetConsumption:
+		return r.ErrorBudgetConsumption.Minutes()
+	case ErrorBudgetConsumptionPercentage:
+		return r.ErrorBudgetConsumptionRate() * 100.0
+	case UpTime:
+		return r.UpTime.Minutes()
+	case FailureTime:
+		return r.FailureTime.Minutes()
+	}
+	panic(fmt.Sprintf("unknown metric type %v", metricType))
+}
