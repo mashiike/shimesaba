@@ -6,8 +6,10 @@ destination:
   metric_prefix: app_test
   metrics:
     error_budget:
+      metric_type_name: eb
       enabled: true
     error_budget_remaining_percentage:
+      metric_type_name: ebr
       enabled: true
     error_budget_percentage:
       enabled: false

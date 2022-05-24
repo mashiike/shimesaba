@@ -48,8 +48,8 @@ type DestinationConfig struct {
 }
 
 type DestinationMetricConfig struct {
-	MetricTypeName string
-	Enabled        *bool
+	MetricTypeName string `json:"metric_type_name,omitempty" yaml:"metric_type_name,omitempty"`
+	Enabled        *bool  `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
 type AlertBasedSLIConfig struct {
@@ -282,7 +282,7 @@ func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 		MetricPrefix: coalesceString(o.MetricPrefix, c.MetricPrefix),
 		MetricSuffix: coalesceString(o.MetricSuffix, c.MetricSuffix),
 	}
-	keys := DestinationMetricTypeStrings()
+	keys := DestinationMetricTypeValues()
 	metrics := make(map[string]*DestinationMetricConfig, len(keys))
 	base := c.Metrics
 	if base == nil {
@@ -290,12 +290,14 @@ func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 	}
 	if o.Metrics != nil {
 		for _, key := range keys {
-			metricCfg, ok := base[key]
+			metricCfg, ok := base[key.ID()]
 			if !ok {
 				metricCfg = &DestinationMetricConfig{}
 			}
-			metrics[key] = metricCfg.Merge(o.Metrics[key])
+			metrics[key.ID()] = metricCfg.Merge(o.Metrics[key.ID()])
 		}
+	} else {
+		metrics = base
 	}
 	ret.Metrics = metrics
 	return ret
