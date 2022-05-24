@@ -30,6 +30,7 @@ func TestAppWithMock(t *testing.T) {
 						"shimesaba.error_budget_consumption.alerts":            backfill,
 						"shimesaba.error_budget_consumption_percentage.alerts": backfill,
 						"shimesaba.error_budget_percentage.alerts":             backfill,
+						"shimesaba.error_budget_remaining_percentage.alerts":   backfill,
 						"shimesaba.failure_time.alerts":                        backfill,
 						"shimesaba.uptime.alerts":                              backfill,
 					},

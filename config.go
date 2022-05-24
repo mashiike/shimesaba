@@ -41,9 +41,15 @@ type SLOConfig struct {
 
 // DestinationConfig is a configuration for submitting service metrics to Mackerel
 type DestinationConfig struct {
-	ServiceName  string `json:"service_name" yaml:"service_name"`
-	MetricPrefix string `json:"metric_prefix" yaml:"metric_prefix"`
-	MetricSuffix string `json:"metric_suffix" yaml:"metric_suffix"`
+	ServiceName  string                              `json:"service_name" yaml:"service_name"`
+	MetricPrefix string                              `json:"metric_prefix" yaml:"metric_prefix"`
+	MetricSuffix string                              `json:"metric_suffix" yaml:"metric_suffix"`
+	Metrics      map[string]*DestinationMetricConfig `json:"metrics" yaml:"metrics"`
+}
+
+type DestinationMetricConfig struct {
+	MetricTypeName string
+	Enabled        *bool
 }
 
 type AlertBasedSLIConfig struct {
@@ -200,7 +206,33 @@ func (c *DestinationConfig) Restrict(sloID string) error {
 		log.Printf("[debug] metric_suffix is empty, fallback %s", sloID)
 		c.MetricSuffix = sloID
 	}
+	if c.Metrics == nil {
+		c.Metrics = make(map[string]*DestinationMetricConfig)
+	}
+	keys := DestinationMetricTypeValues()
+	for _, key := range keys {
+		metricCfg, ok := c.Metrics[key.String()]
+		if !ok {
+			metricCfg = &DestinationMetricConfig{}
+		}
+		if err := metricCfg.Restrict(key); err != nil {
+			return fmt.Errorf("metrics `%s`: %w", key.String(), err)
+		}
+		c.Metrics[key.String()] = metricCfg
+	}
 
+	return nil
+}
+
+// Restrict restricts a definition configuration.
+func (c *DestinationMetricConfig) Restrict(t DestinationMetricType) error {
+	if c.MetricTypeName == "" {
+		c.MetricTypeName = t.String()
+	}
+	if c.Enabled == nil {
+		enabled := t.DefaultEnabled()
+		c.Enabled = &enabled
+	}
 	return nil
 }
 
@@ -240,7 +272,7 @@ func (c *SLOConfig) Merge(o *SLOConfig) *SLOConfig {
 	return ret
 }
 
-// Merge merges SLOConfig together
+// Merge merges DestinationConfig together
 func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 	if o == nil {
 		o = &DestinationConfig{}
@@ -249,6 +281,34 @@ func (c *DestinationConfig) Merge(o *DestinationConfig) *DestinationConfig {
 		ServiceName:  coalesceString(o.ServiceName, c.ServiceName),
 		MetricPrefix: coalesceString(o.MetricPrefix, c.MetricPrefix),
 		MetricSuffix: coalesceString(o.MetricSuffix, c.MetricSuffix),
+	}
+	keys := DestinationMetricTypeStrings()
+	metrics := make(map[string]*DestinationMetricConfig, len(keys))
+	base := c.Metrics
+	if base == nil {
+		base = make(map[string]*DestinationMetricConfig)
+	}
+	if o.Metrics != nil {
+		for _, key := range keys {
+			metricCfg, ok := base[key]
+			if !ok {
+				metricCfg = &DestinationMetricConfig{}
+			}
+			metrics[key] = metricCfg.Merge(o.Metrics[key])
+		}
+	}
+	ret.Metrics = metrics
+	return ret
+}
+
+// Merge merges DestinationMetricConfig together
+func (c *DestinationMetricConfig) Merge(o *DestinationMetricConfig) *DestinationMetricConfig {
+	if o == nil {
+		o = &DestinationMetricConfig{}
+	}
+	ret := &DestinationMetricConfig{
+		MetricTypeName: coalesceString(o.MetricTypeName, c.MetricTypeName),
+		Enabled:        coalesce(o.Enabled, c.Enabled),
 	}
 	return ret
 }
@@ -293,4 +353,15 @@ func coalesceString(strs ...string) string {
 		}
 	}
 	return ""
+}
+
+func coalesce[T any](elements ...*T) *T {
+	for _, element := range elements {
+		if element != nil {
+			var ret T
+			ret = *element
+			return &ret
+		}
+	}
+	return nil
 }

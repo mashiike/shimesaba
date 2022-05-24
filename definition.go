@@ -25,12 +25,8 @@ func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 		AlertBasedSLIs = append(AlertBasedSLIs, NewAlertBasedSLI(cfg))
 	}
 	return &Definition{
-		id: cfg.ID,
-		destination: &Destination{
-			ServiceName:  cfg.Destination.ServiceName,
-			MetricPrefix: cfg.Destination.MetricPrefix,
-			MetricSuffix: cfg.Destination.MetricSuffix,
-		},
+		id:              cfg.ID,
+		destination:     NewDestination(cfg.Destination),
 		rollingPeriod:   cfg.DurationRollingPeriod(),
 		calculate:       cfg.DurationCalculate(),
 		errorBudgetSize: cfg.ErrorBudgetSizePercentage(),
