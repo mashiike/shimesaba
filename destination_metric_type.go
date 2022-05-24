@@ -17,10 +17,18 @@ const (
 	FailureTime
 )
 
+func (t DestinationMetricType) ID() string {
+	return t.String()
+}
+
+func (t DestinationMetricType) DefaultTypeName() string {
+	return t.String()
+}
+
 func (t DestinationMetricType) DefaultEnabled() bool {
 	switch t {
 	case UpTime, FailureTime:
-		log.Printf("[warn] In the near future the default value of `enabled` for `%s` metrics will be false, please specify explicitly in config", t.String())
+		log.Printf("[warn] In the near future the default value of `enabled` for `%s` metrics will be false, please specify explicitly in config", t.ID())
 		return true
 	default:
 		return true

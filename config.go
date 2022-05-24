@@ -211,14 +211,14 @@ func (c *DestinationConfig) Restrict(sloID string) error {
 	}
 	keys := DestinationMetricTypeValues()
 	for _, key := range keys {
-		metricCfg, ok := c.Metrics[key.String()]
+		metricCfg, ok := c.Metrics[key.ID()]
 		if !ok {
 			metricCfg = &DestinationMetricConfig{}
 		}
 		if err := metricCfg.Restrict(key); err != nil {
-			return fmt.Errorf("metrics `%s`: %w", key.String(), err)
+			return fmt.Errorf("metrics `%s`: %w", key.ID(), err)
 		}
-		c.Metrics[key.String()] = metricCfg
+		c.Metrics[key.ID()] = metricCfg
 	}
 
 	return nil
@@ -227,7 +227,7 @@ func (c *DestinationConfig) Restrict(sloID string) error {
 // Restrict restricts a definition configuration.
 func (c *DestinationMetricConfig) Restrict(t DestinationMetricType) error {
 	if c.MetricTypeName == "" {
-		c.MetricTypeName = t.String()
+		c.MetricTypeName = t.DefaultTypeName()
 	}
 	if c.Enabled == nil {
 		enabled := t.DefaultEnabled()

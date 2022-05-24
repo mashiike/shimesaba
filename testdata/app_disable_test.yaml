@@ -1,0 +1,30 @@
+
+required_version: ">=1.1.0"
+
+destination:
+  service_name:  shimesaba
+  metric_prefix: app_test
+  metrics:
+    error_budget:
+      enabled: true
+    error_budget_remaining_percentage:
+      enabled: true
+    error_budget_percentage:
+      enabled: false
+    error_budget_consumption:
+      enabled: false
+    error_budget_consumption_percentage:
+      enabled: false
+    uptime:
+      enabled: false
+    failure_time:
+      enabled: false
+
+slo:
+  - id: availability
+    rolling_period: 5m
+    calculate_interval: 1m
+    error_budget_size: 0.1
+    alert_based_sli:
+      - monitor_id: "dummyMonitorID"
+      - monitor_name_prefix: "Dummy"

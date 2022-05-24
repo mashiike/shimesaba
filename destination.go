@@ -22,7 +22,7 @@ func NewDestination(cfg *DestinationConfig) *Destination {
 		return ret
 	}
 	for _, metricType := range DestinationMetricTypeValues() {
-		if metricCfg, ok := cfg.Metrics[metricType.String()]; ok {
+		if metricCfg, ok := cfg.Metrics[metricType.ID()]; ok {
 			ret.MetricTypeNames[metricType] = metricCfg.MetricTypeName
 			if metricCfg.Enabled == nil {
 				ret.MetricTypeEnabled[metricType] = metricType.DefaultEnabled()
@@ -36,12 +36,12 @@ func NewDestination(cfg *DestinationConfig) *Destination {
 
 func (d *Destination) MetricName(metricType DestinationMetricType) string {
 	if d.MetricTypeNames == nil {
-		return fmt.Sprintf("%s.%s.%s", d.MetricPrefix, metricType.String(), d.MetricSuffix)
+		return fmt.Sprintf("%s.%s.%s", d.MetricPrefix, metricType.DefaultTypeName(), d.MetricSuffix)
 	}
 	if name, ok := d.MetricTypeNames[metricType]; ok {
 		return fmt.Sprintf("%s.%s.%s", d.MetricPrefix, name, d.MetricSuffix)
 	}
-	return fmt.Sprintf("%s.%s.%s", d.MetricPrefix, metricType.String(), d.MetricSuffix)
+	return fmt.Sprintf("%s.%s.%s", d.MetricPrefix, metricType.DefaultTypeName(), d.MetricSuffix)
 }
 
 func (d *Destination) MetricEnabled(metricType DestinationMetricType) bool {
