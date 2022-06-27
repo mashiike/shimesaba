@@ -30,8 +30,8 @@ github.com/kayac/go-config v0.6.0 h1:Y4l9tsWrUCvT1id8tbO4aT4SdGxbYqd8lqSe5l1GrK0
 github.com/kayac/go-config v0.6.0/go.mod h1:5C4ZN+sMjYpEX0bi+AcgF6g0hZYVdzZiV16TEyzAzfk=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
-github.com/mackerelio/mackerel-client-go v0.21.0 h1:7s0GBxpHqHsUMm1hRz1HSHxhcFT15LnWIYar77Hnd1I=
-github.com/mackerelio/mackerel-client-go v0.21.0/go.mod h1:/GNOj+y1eFsd3CK8c6IQ/uS38/GT0+NWImk5YGJs5Lk=
+github.com/mackerelio/mackerel-client-go v0.21.1 h1:VeWwvXEvFSABD68HxCZYKE3f+yOVpXWp6imUe5IjNBo=
+github.com/mackerelio/mackerel-client-go v0.21.1/go.mod h1:/GNOj+y1eFsd3CK8c6IQ/uS38/GT0+NWImk5YGJs5Lk=
 github.com/mattn/go-colorable v0.1.9 h1:sqDoxXbdeALODt0DAeJCVp38ps9ZogZEAXjus69YV3U=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
