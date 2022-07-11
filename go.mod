@@ -13,7 +13,7 @@ require (
 	github.com/mackerelio/mackerel-client-go v0.21.1
 	github.com/shogo82148/go-retry v1.1.1
 	github.com/stretchr/testify v1.7.3
-	github.com/urfave/cli/v2 v2.10.3
+	github.com/urfave/cli/v2 v2.11.0
 )
 
 require (
