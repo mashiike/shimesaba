@@ -1,0 +1,20 @@
+
+required_version: ">=1.2.0"
+
+destination:
+  metrics:
+    uptime:
+      enabled: true
+    failure_time:
+      enabled: true
+
+slo:
+  - id: alerts
+    destination:
+      service_name:  shimesaba
+    rolling_period: 5m
+    calculate_interval: 1m
+    error_budget_size: 0.1
+    alert_based_sli:
+      - monitor_id: "dummyMonitorID"
+      - monitor_name_prefix: "Dummy"

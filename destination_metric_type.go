@@ -1,7 +1,5 @@
 package shimesaba
 
-import "log"
-
 type DestinationMetricType int
 
 //go:generate go install github.com/dmarkham/enumer
@@ -28,8 +26,7 @@ func (t DestinationMetricType) DefaultTypeName() string {
 func (t DestinationMetricType) DefaultEnabled() bool {
 	switch t {
 	case UpTime, FailureTime:
-		log.Printf("[warn] In the near future the default value of `enabled` for `%s` metrics will be false, please specify explicitly in config", t.ID())
-		return true
+		return false
 	default:
 		return true
 	}
