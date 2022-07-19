@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +25,8 @@ type MackerelClient interface {
 	FindWithClosedAlertsByNextID(nextID string) (*mackerel.AlertsResp, error)
 	GetMonitor(monitorID string) (mackerel.Monitor, error)
 	FindMonitors() ([]mackerel.Monitor, error)
+
+	FindGraphAnnotations(service string, from int64, to int64) ([]mackerel.GraphAnnotation, error)
 }
 
 // Repository handles reading and writing data
@@ -155,6 +158,47 @@ func (repo *Repository) FetchAlerts(ctx context.Context, startAt time.Time, endA
 		alerts = append(alerts, alert)
 	}
 	return alerts, nil
+}
+
+const virtualAlertKeyword = "SLO:"
+
+// FetchVirtualAlerts retrieves graph annotations for a specified time period and returns them as virtual alerts.
+func (repo *Repository) FetchVirtualAlerts(ctx context.Context, serviceName string, sloID string, startAt time.Time, endAt time.Time) (Alerts, error) {
+	log.Printf("[debug] call MackerelClient.FindGraphAnnotations(%s, %s, %s)", serviceName, startAt, endAt)
+	annotations, err := repo.client.FindGraphAnnotations(serviceName, startAt.Unix(), endAt.Unix())
+	if err != nil {
+		return nil, err
+	}
+	vAlerts := make(Alerts, 0)
+	for _, annotation := range annotations {
+		i := strings.Index(annotation.Description, virtualAlertKeyword)
+		if i < 0 {
+			continue
+		}
+		str := annotation.Description[i+len(virtualAlertKeyword):]
+		j := strings.IndexRune(str, ' ')
+		if j >= 0 {
+			str = str[:j]
+		}
+		if strings.EqualFold(strings.TrimSpace(str), "*") {
+			vAlerts = append(vAlerts, NewVirtualAlert(
+				annotation.Description,
+				time.Unix(annotation.From, 0),
+				time.Unix(annotation.To, 0),
+			))
+		}
+		slos := strings.Split(str, ",")
+		for _, slo := range slos {
+			if strings.HasPrefix(slo, sloID) {
+				vAlerts = append(vAlerts, NewVirtualAlert(
+					annotation.Description,
+					time.Unix(annotation.From, 0),
+					time.Unix(annotation.To, 0),
+				))
+			}
+		}
+	}
+	return vAlerts, nil
 }
 
 func (repo *Repository) fetchAlertsInitial(ctx context.Context) error {
