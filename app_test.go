@@ -31,8 +31,6 @@ func TestAppWithMock(t *testing.T) {
 						"shimesaba.error_budget_consumption_percentage.alerts": backfill,
 						"shimesaba.error_budget_percentage.alerts":             backfill,
 						"shimesaba.error_budget_remaining_percentage.alerts":   backfill,
-						"shimesaba.failure_time.alerts":                        backfill,
-						"shimesaba.uptime.alerts":                              backfill,
 					},
 				},
 				{
@@ -40,6 +38,18 @@ func TestAppWithMock(t *testing.T) {
 					expected: map[string]int{
 						"app_test.eb.availability":  backfill,
 						"app_test.ebr.availability": backfill,
+					},
+				},
+				{
+					configFile: "testdata/app_uptime_and_failuretime.yaml",
+					expected: map[string]int{
+						"shimesaba.error_budget.alerts":                        backfill,
+						"shimesaba.error_budget_consumption.alerts":            backfill,
+						"shimesaba.error_budget_consumption_percentage.alerts": backfill,
+						"shimesaba.error_budget_percentage.alerts":             backfill,
+						"shimesaba.error_budget_remaining_percentage.alerts":   backfill,
+						"shimesaba.failure_time.alerts":                        backfill,
+						"shimesaba.uptime.alerts":                              backfill,
 					},
 				},
 			}
