@@ -41,6 +41,7 @@ func (d *Definition) ID() string {
 
 type DataProvider interface {
 	FetchAlerts(ctx context.Context, startAt time.Time, endAt time.Time) (Alerts, error)
+	FetchVirtualAlerts(ctx context.Context, serviceName string, sloID string, startAt time.Time, endAt time.Time) (Alerts, error)
 }
 
 // CreateReports returns Report with Metrics
@@ -50,6 +51,11 @@ func (d *Definition) CreateReports(ctx context.Context, provider DataProvider, n
 	if err != nil {
 		return nil, err
 	}
+	valerts, err := provider.FetchVirtualAlerts(ctx, d.destination.ServiceName, d.id, startAt, now)
+	if err != nil {
+		return nil, err
+	}
+	alerts = append(alerts, valerts...)
 	return d.CreateReportsWithAlertsAndPeriod(ctx, alerts, d.StartAt(now, backfill), now)
 }
 

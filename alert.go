@@ -33,6 +33,16 @@ func NewAlert(monitor *Monitor, openedAt time.Time, closedAt *time.Time) *Alert 
 		ClosedAt: closedAt,
 	}
 }
+
+func NewVirtualAlert(description string, openedAt time.Time, closedAt time.Time) *Alert {
+	closedAt = closedAt.Truncate(time.Minute).UTC()
+	return &Alert{
+		OpenedAt: openedAt.Truncate(time.Minute).UTC(),
+		ClosedAt: &closedAt,
+		Reason:   description,
+	}
+}
+
 func (alert *Alert) WithHostID(hostID string) *Alert {
 	return &Alert{
 		Monitor:  alert.Monitor,
@@ -60,6 +70,10 @@ func (alert *Alert) String() string {
 		alert.OpenedAt,
 		alert.ClosedAt,
 	)
+}
+
+func (alert *Alert) IsVirtual() bool {
+	return alert.Monitor == nil
 }
 
 func (alert *Alert) endAt() time.Time {

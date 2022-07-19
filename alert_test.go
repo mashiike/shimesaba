@@ -41,6 +41,11 @@ func TestAlerts(t *testing.T) {
 			time.Date(2021, time.October, 1, 0, 3, 0, 0, time.UTC),
 			ptrTime(time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC)),
 		),
+		shimesaba.NewVirtualAlert(
+			"slo:hoge",
+			time.Date(2021, time.October, 1, 0, 2, 0, 0, time.UTC),
+			time.Date(2021, time.October, 1, 0, 4, 0, 0, time.UTC),
+		),
 	}
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 0, 0, 0, time.UTC), alerts.StartAt())
 	require.EqualValues(t, time.Date(2021, time.October, 1, 0, 5, 0, 0, time.UTC), alerts.EndAt())

@@ -45,6 +45,9 @@ func (o AlertBasedSLI) EvaluateReliabilities(timeFrame time.Duration, alerts Ale
 }
 
 func (o AlertBasedSLI) matchAlert(alert *Alert) bool {
+	if alert.IsVirtual() {
+		return true
+	}
 	log.Printf("[debug] try match %s vs %v", alert, o.cfg)
 	if o.MatchMonitor(alert.Monitor) {
 		log.Printf("[debug] match %s", alert)
