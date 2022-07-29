@@ -169,11 +169,15 @@ func (repo *Repository) FetchVirtualAlerts(ctx context.Context, serviceName stri
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("[debug] get %d graph annotations", len(annotations))
 	vAlerts := make(Alerts, 0)
 	for _, annotation := range annotations {
 		i := strings.Index(annotation.Description, virtualAlertKeyword)
 		if i < 0 {
-			continue
+			i = strings.Index(annotation.Description, strings.ToLower(virtualAlertKeyword))
+			if i < 0 {
+				continue
+			}
 		}
 		str := annotation.Description[i+len(virtualAlertKeyword):]
 		j := strings.IndexRune(str, ' ')
