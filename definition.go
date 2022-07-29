@@ -51,10 +51,12 @@ func (d *Definition) CreateReports(ctx context.Context, provider DataProvider, n
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("[debug] get %d alerts", len(alerts))
 	valerts, err := provider.FetchVirtualAlerts(ctx, d.destination.ServiceName, d.id, startAt, now)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("[debug] get %d virtual alerts", len(valerts))
 	alerts = append(alerts, valerts...)
 	return d.CreateReportsWithAlertsAndPeriod(ctx, alerts, d.StartAt(now, backfill), now)
 }
