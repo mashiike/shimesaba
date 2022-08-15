@@ -140,11 +140,15 @@ If you enter `downtime:3m` or similar in the reason for closing an alert, the al
 The description "3m" can be any time like `1h`, `40m`, `1h50m`, etc. as well as other settings.
 When combined with other statements, half-width spaces are required before and after the above keywords.
 
-### Environment variable `SSMWRAP_PATHS`
+### Environment variable `SSMWRAP_PATHS`, `SSMWRAP_NAMES`
 
 It incorporates [github.com/handlename/ssmwrap](https://github.com/handlename/ssmwrap) for parameter management.  
 If you specify the path of the Parameter Store of AWS Systems Manager separated by commas, it will be output to the environment variable.  
 Useful when used as a Lambda function. 
+
+For example, if you have a secrets named `prod/MACKEREL_APIKEY` in your secrets manager, it is useful to set the following environment variable.
+
+`SSMWRAP_NAMES=/aws/reference/secretsmanager/prod/MACKEREL_APIKEY`
 
 ## LICENSE
 

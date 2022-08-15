@@ -19,7 +19,8 @@ import (
 
 var (
 	Version           = "current"
-	ssmwrapErr        error
+	ssmwrapPathsErr   error
+	ssmwrapNamesErr   error
 	globalDryRun      bool
 	globalDumpReports bool
 	globalBackfill    int
@@ -29,11 +30,20 @@ func main() {
 	ssmwrapPaths := os.Getenv("SSMWRAP_PATHS")
 	paths := strings.Split(ssmwrapPaths, ",")
 	if ssmwrapPaths != "" && len(paths) > 0 {
-		ssmwrapErr = ssmwrap.Export(ssmwrap.ExportOptions{
+		ssmwrapPathsErr = ssmwrap.Export(ssmwrap.ExportOptions{
 			Paths:   paths,
 			Retries: 3,
 		})
 	}
+	ssmwrapNames := os.Getenv("SSMWRAP_NAMES")
+	names := strings.Split(ssmwrapNames, ",")
+	if ssmwrapPathsErr == nil && ssmwrapNames != "" && len(names) > 0 {
+		ssmwrapNamesErr = ssmwrap.Export(ssmwrap.ExportOptions{
+			Names:   names,
+			Retries: 3,
+		})
+	}
+
 	cliApp := &cli.App{
 		Name:      "shimesaba",
 		Usage:     "A commandline tool for tracking SLO/ErrorBudget using Mackerel as an SLI measurement service.",
@@ -125,7 +135,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
 	defer cancel()
 	if err := cliApp.RunContext(ctx, os.Args); err != nil {
-		log.Printf("[error] %s", err)
+		log.Fatalf("[error] %s", err)
 	}
 }
 
@@ -135,8 +145,11 @@ func isLambda() bool {
 }
 
 func buildApp(c *cli.Context) (*shimesaba.App, error) {
-	if ssmwrapErr != nil {
-		return nil, fmt.Errorf("ssmwrap.Export failed: %w", ssmwrapErr)
+	if ssmwrapPathsErr != nil {
+		return nil, fmt.Errorf("ssmwrap.Export SSMWRAP_PATHS failed: %w", ssmwrapPathsErr)
+	}
+	if ssmwrapNamesErr != nil {
+		return nil, fmt.Errorf("ssmwrap.Export SSMWRAP_NAMES failed: %w", ssmwrapNamesErr)
 	}
 	cfg := shimesaba.NewDefaultConfig()
 	if err := cfg.Load(c.StringSlice("config")...); err != nil {
