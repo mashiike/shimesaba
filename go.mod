@@ -13,11 +13,11 @@ require (
 	github.com/mackerelio/mackerel-client-go v0.21.1
 	github.com/shogo82148/go-retry v1.1.1
 	github.com/stretchr/testify v1.8.0
-	github.com/urfave/cli/v2 v2.11.0
+	github.com/urfave/cli/v2 v2.23.6
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.0 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/aws/aws-sdk-go v1.38.71 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
