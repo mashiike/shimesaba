@@ -1,0 +1,25 @@
+name: release
+description: release executables
+inputs:
+  tag:
+    description: tag name to be released
+    default: ''
+  token:
+    description: GitHub token
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.tag }}
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+          go-version: 1.19
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v1
+      with:
+        version: latest
+        args: release

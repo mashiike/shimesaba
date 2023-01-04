@@ -1,0 +1,23 @@
+# .github/workflows/tagpr.yml
+name: tagpr
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  tagpr:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: tagpr
+        uses: Songmu/tagpr@v1
+      - name: Adding summary
+        run: echo '### ${{steps.tagpr.outputs.tag}}' >> $GITHUB_STEP_SUMMARY
+        if: ${{ steps.tagpr.outputs.tag != '' }}
+      - uses: ./.github/actions/release
+        with:
+          tag: ${{ steps.tagpr.outputs.tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+        if: ${{ steps.tagpr.outputs.tag != '' }}
