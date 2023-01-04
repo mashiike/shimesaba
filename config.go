@@ -14,7 +14,7 @@ import (
 	"github.com/mashiike/shimesaba/internal/timeutils"
 )
 
-//Config for App
+// Config for App
 type Config struct {
 	RequiredVersion string `yaml:"required_version" json:"required_version"`
 
@@ -360,8 +360,7 @@ func coalesceString(strs ...string) string {
 func coalesce[T any](elements ...*T) *T {
 	for _, element := range elements {
 		if element != nil {
-			var ret T
-			ret = *element
+			ret := *element
 			return &ret
 		}
 	}
