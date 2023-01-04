@@ -11,7 +11,16 @@ jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/release
+      - name: Checkout
+        uses: actions/checkout@v3
         with:
-          tag: ${{ inputs.tag }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ inputs.tag }}
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: release
