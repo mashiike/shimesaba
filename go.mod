@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.36.1
 	github.com/fatih/color v1.13.0
 	github.com/fujiwara/logutils v1.1.0
-	github.com/handlename/ssmwrap v1.2.0
+	github.com/handlename/ssmwrap v1.2.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/kayac/go-config v0.6.0
 	github.com/mackerelio/mackerel-client-go v0.21.1
@@ -18,7 +18,7 @@ require (
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/aws/aws-sdk-go v1.38.71 // indirect
+	github.com/aws/aws-sdk-go v1.44.118 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
