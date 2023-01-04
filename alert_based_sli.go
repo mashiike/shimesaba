@@ -2,7 +2,10 @@ package shimesaba
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +22,20 @@ func NewAlertBasedSLI(cfg *AlertBasedSLIConfig) *AlertBasedSLI {
 	return &AlertBasedSLI{cfg: cfg}
 }
 
+var evaluateReliabilitiesWorkerNum int = 10
+
+func init() {
+	if str := os.Getenv("SHIMESABA_EVALUATE_RELIABILITIES_WORKER_NUM"); str != "" {
+		i, err := strconv.ParseInt(str, 10, 32)
+		if err != nil {
+			panic(fmt.Errorf("SHIMESABA_EVALUATE_RELIABILITIES_WORKER_NUM can not parse as int: %w", err))
+		}
+		evaluateReliabilitiesWorkerNum = int(i)
+		if evaluateReliabilitiesWorkerNum <= 0 {
+			evaluateReliabilitiesWorkerNum = 1
+		}
+	}
+}
 func (o AlertBasedSLI) EvaluateReliabilities(timeFrame time.Duration, alerts Alerts, startAt, endAt time.Time) (Reliabilities, error) {
 	iter := timeutils.NewIterator(startAt, endAt, timeFrame)
 	iter.SetEnableOverWindow(true)
@@ -32,14 +49,13 @@ func (o AlertBasedSLI) EvaluateReliabilities(timeFrame time.Duration, alerts Ale
 		return nil, err
 	}
 
-	workerNum := 10
 	inputQueue := make(chan *Alert, len(alerts))
-	outputQueue := make(chan Reliabilities, workerNum*2)
+	outputQueue := make(chan Reliabilities, evaluateReliabilitiesWorkerNum*2)
 	quit := make(chan struct{})
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	eg, egCtx := errgroup.WithContext(cancelCtx)
-	for i := 0; i < workerNum; i++ {
+	for i := 0; i < evaluateReliabilitiesWorkerNum; i++ {
 		//input workers
 		workerID := i
 		eg.Go(func() error {
