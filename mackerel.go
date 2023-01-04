@@ -59,10 +59,6 @@ func (repo *Repository) GetOrgName(ctx context.Context) (string, error) {
 	return org.Name, nil
 }
 
-const (
-	fetchMetricMetricmit = 6 * time.Hour
-)
-
 // SaveReports posts Reports to Mackerel
 func (repo *Repository) SaveReports(ctx context.Context, reports []*Report) error {
 	services := make(map[string][]*mackerel.MetricValue)

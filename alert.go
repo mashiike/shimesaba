@@ -64,9 +64,12 @@ func (alert *Alert) WithReason(reason string) *Alert {
 }
 
 func (alert *Alert) String() string {
-	return fmt.Sprintf("alert[%s:%s] %s ~ %s",
-		alert.Monitor.ID(),
-		alert.Monitor.Name(),
+	monitor := "???"
+	if alert.Monitor != nil {
+		monitor = alert.Monitor.ID() + ":" + alert.Monitor.Name()
+	}
+	return fmt.Sprintf("alert[%s] %s ~ %s",
+		monitor,
 		alert.OpenedAt,
 		alert.ClosedAt,
 	)
