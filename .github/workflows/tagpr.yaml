@@ -16,8 +16,19 @@ jobs:
       - name: Adding summary
         run: echo '### ${{steps.tagpr.outputs.tag}}' >> $GITHUB_STEP_SUMMARY
         if: ${{ steps.tagpr.outputs.tag != '' }}
-      - uses: ./.github/actions/release
+      - name: Checkout
+        uses: actions/checkout@v3
+        if: ${{ steps.tagpr.outputs.tag != '' }}
         with:
-          tag: ${{ steps.tagpr.outputs.tag }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ steps.tagpr.outputs.tag }}
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+            go-version: 1.19
+        if: ${{ steps.tagpr.outputs.tag != '' }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          version: latest
+          args: release
         if: ${{ steps.tagpr.outputs.tag != '' }}
