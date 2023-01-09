@@ -10,7 +10,7 @@ require (
 	github.com/handlename/ssmwrap v1.2.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/kayac/go-config v0.6.0
-	github.com/mackerelio/mackerel-client-go v0.23.0
+	github.com/mackerelio/mackerel-client-go v0.24.0
 	github.com/shogo82148/go-retry v1.1.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.23.7
@@ -30,9 +30,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
-	golang.org/x/tools v0.1.12 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
