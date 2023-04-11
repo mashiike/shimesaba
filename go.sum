@@ -14,8 +14,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
-github.com/fujiwara/logutils v1.1.0 h1:JAYmqW40d/ZjzouB01sfZiaTxwNe4hwmB6lLajZqm1s=
-github.com/fujiwara/logutils v1.1.0/go.mod h1:pdb/Uk70rjQWEmFm/OvYH7OG8meZt1fEIqC0qZbvro4=
+github.com/fujiwara/logutils v1.1.2 h1:nYVRyTj+5SyCvpZUrYIZU4kubqNycGTxFXMKJBKe0Sg=
+github.com/fujiwara/logutils v1.1.2/go.mod h1:pdb/Uk70rjQWEmFm/OvYH7OG8meZt1fEIqC0qZbvro4=
 github.com/google/go-cmp v0.5.1/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.8 h1:e6P7q2lk1O+qJJb4BtCQXlK8vWEO8V1ZeuEdJNOqZyg=
 github.com/google/go-cmp v0.5.8/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
