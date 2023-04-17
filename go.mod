@@ -10,7 +10,7 @@ require (
 	github.com/handlename/ssmwrap v1.2.1
 	github.com/hashicorp/go-version v1.6.0
 	github.com/kayac/go-config v0.6.0
-	github.com/mackerelio/mackerel-client-go v0.24.0
+	github.com/mackerelio/mackerel-client-go v0.25.0
 	github.com/shogo82148/go-retry v1.1.1
 	github.com/stretchr/testify v1.8.1
 	github.com/urfave/cli/v2 v2.25.1
