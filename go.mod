@@ -12,7 +12,7 @@ require (
 	github.com/kayac/go-config v0.6.0
 	github.com/mackerelio/mackerel-client-go v0.26.0
 	github.com/shogo82148/go-retry v1.1.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.3
 	github.com/urfave/cli/v2 v2.25.1
 	golang.org/x/sync v0.2.0
 )
