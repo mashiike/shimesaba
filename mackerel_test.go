@@ -92,6 +92,18 @@ func TestRepositoryFetchAlerts(t *testing.T) {
 			endAt:    time.Date(2022, 10, 1, 0, 15, 0, 0, time.UTC),
 			expected: shimesaba.Alerts{},
 		},
+		{
+			name:    "check monitor",
+			startAt: time.Date(2021, 10, 1, 0, 17, 0, 0, time.UTC),
+			endAt:   time.Date(2021, 10, 1, 0, 18, 0, 0, time.UTC),
+			expected: shimesaba.Alerts{
+				{
+					OpenedAt: time.Date(2021, 10, 1, 0, 17, 0, 0, time.UTC),
+					Monitor:  shimesaba.NewMonitor("dummyCheckMonitorID", "check monitor dummyCheckMonitorID", "check"),
+					ClosedAt: nil,
+				},
+			},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
