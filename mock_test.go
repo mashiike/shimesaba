@@ -1,6 +1,7 @@
 package shimesaba_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -61,6 +62,14 @@ func (m *mockMackerelClient) FindWithClosedAlerts() (*mackerel.AlertsResp, error
 				Value:     0.01,
 				Type:      "service",
 			},
+			{
+				ID:        "dummyID20211001-00200",
+				Status:    "WARNING",
+				MonitorID: "dummyCheckMonitorID",
+				OpenedAt:  time.Date(2021, 10, 1, 0, 17, 0, 0, time.UTC).Unix(),
+				Value:     0.01,
+				Type:      "check",
+			},
 		},
 		NextID: "dummyNextID",
 	}, nil
@@ -85,12 +94,22 @@ func (m *mockMackerelClient) FindWithClosedAlertsByNextID(nextID string) (*macke
 }
 
 func (m *mockMackerelClient) GetMonitor(monitorID string) (mackerel.Monitor, error) {
-	require.Equal(m.t, "dummyMonitorID", monitorID)
-	return &mackerel.MonitorServiceMetric{
-		ID:   monitorID,
-		Name: "Dummy Service Metric Monitor",
-		Type: "service",
-	}, nil
+	switch monitorID {
+	case "dummyMonitorID":
+		return &mackerel.MonitorServiceMetric{
+			ID:   monitorID,
+			Name: "Dummy Service Metric Monitor",
+			Type: "service",
+		}, nil
+	case "dummyCheckMonitorID":
+		return nil, &mackerel.APIError{
+			StatusCode: 400,
+			Message:    "Cannot get a check monitor",
+		}
+	default:
+		require.Equal(m.t, "dummyMonitorID", monitorID)
+		return nil, errors.New("unexpected monitorID")
+	}
 }
 
 var graphAnnotations = []mackerel.GraphAnnotation{

@@ -252,9 +252,16 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp) ([]*Alert, erro
 			tmpClosedAt := time.Unix(alert.ClosedAt, 0)
 			closedAt = &tmpClosedAt
 		}
-		monitor, err := repo.getMonitor(alert.MonitorID)
-		if err != nil {
-			return nil, err
+		var monitor *Monitor
+		if alert.MonitorID == "" {
+			log.Printf("[warn] alert[%s].MonitorID is empty", alert.ID)
+			monitor = NewMonitor("unknown", "unknown", "unknown")
+		} else {
+			var err error
+			monitor, err = repo.getMonitor(alert.MonitorID, alert.Type)
+			if err != nil {
+				return nil, fmt.Errorf("get monitor for alert `%s`: %w", alert.ID, err)
+			}
 		}
 		a := NewAlert(
 			monitor,
@@ -268,21 +275,27 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp) ([]*Alert, erro
 	return alerts, nil
 }
 
-func (repo *Repository) getMonitor(id string) (*Monitor, error) {
+func (repo *Repository) getMonitor(id string, monitorType string) (*Monitor, error) {
 	repo.mu.Lock()
 	defer repo.mu.Unlock()
-
 	if monitor, ok := repo.monitorByID[id]; ok {
 		return monitor, nil
 	}
-	log.Printf("[debug] call GetMonitor(%s)", id)
-	monitor, err := repo.client.GetMonitor(id)
-	if err != nil {
-		return nil, err
+	switch monitorType {
+	case "check":
+		log.Printf("[debug] %s is check monitor, set dummy monitor", id)
+		repo.monitorByID[id] = NewMonitor(id, fmt.Sprintf("check monitor %s", id), "check")
+		return repo.monitorByID[id], nil
+	default:
+		log.Printf("[debug] call GetMonitor(%s)", id)
+		monitor, err := repo.client.GetMonitor(id)
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
+		repo.monitorByID[id] = repo.convertMonitor(monitor)
+		return repo.monitorByID[id], nil
 	}
-	log.Printf("[debug] catch monitor[%s] = %#v", id, monitor)
-	repo.monitorByID[id] = repo.convertMonitor(monitor)
-	return repo.monitorByID[id], nil
 }
 
 func (repo *Repository) FindMonitors() ([]*Monitor, error) {
