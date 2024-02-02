@@ -1,5 +1,25 @@
 # Changelog
 
+## [v1.4.1](https://github.com/mashiike/shimesaba/compare/v1.4.0...v1.4.1) - 2024-02-02
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.23.0 to 0.24.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/91
+- build(deps): bump github.com/urfave/cli/v2 from 2.23.7 to 2.25.1 by @dependabot in https://github.com/mashiike/shimesaba/pull/105
+- build(deps): bump actions/setup-go from 3 to 4 by @dependabot in https://github.com/mashiike/shimesaba/pull/103
+- build(deps): bump github.com/aws/aws-lambda-go from 1.36.1 to 1.39.1 by @dependabot in https://github.com/mashiike/shimesaba/pull/104
+- build(deps): bump github.com/fatih/color from 1.13.0 to 1.15.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/102
+- build(deps): bump github.com/fujiwara/logutils from 1.1.0 to 1.1.2 by @dependabot in https://github.com/mashiike/shimesaba/pull/101
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.24.0 to 0.25.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/110
+- build(deps): bump github.com/aws/aws-lambda-go from 1.39.1 to 1.40.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/108
+- build(deps): bump golang.org/x/sync from 0.0.0-20220722155255-886fb9371eb4 to 0.2.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/112
+- build(deps): bump github.com/aws/aws-lambda-go from 1.40.0 to 1.41.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/113
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.25.0 to 0.26.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/114
+- build(deps): bump github.com/stretchr/testify from 1.8.1 to 1.8.3 by @dependabot in https://github.com/mashiike/shimesaba/pull/115
+- build(deps): bump github.com/urfave/cli/v2 from 2.25.1 to 2.25.7 by @dependabot in https://github.com/mashiike/shimesaba/pull/121
+- Fix error handling in CreateReports function by @mashiike in https://github.com/mashiike/shimesaba/pull/123
+- if check monitor alerts, no GetMonitor API Call. by @mashiike in https://github.com/mashiike/shimesaba/pull/124
+- build(deps): bump golang.org/x/sync from 0.2.0 to 0.6.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/125
+- build(deps): bump github.com/stretchr/testify from 1.8.3 to 1.8.4 by @dependabot in https://github.com/mashiike/shimesaba/pull/118
+- build(deps): bump github.com/kayac/go-config from 0.6.0 to 0.7.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/117
+
 ## [v1.4.0](https://github.com/mashiike/shimesaba/compare/v1.3.0...v1.4.0) - 2023-01-04
 - reconfigure dependabot for github-actions by @mashiike in https://github.com/mashiike/shimesaba/pull/85
 - Feature/tagpr by @mashiike in https://github.com/mashiike/shimesaba/pull/87
