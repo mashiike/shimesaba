@@ -46,7 +46,7 @@ func (o AlertBasedSLI) EvaluateReliabilities(timeFrame time.Duration, alerts Ale
 	}
 	reliabilities, err := NewReliabilities(rc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create Reliabilities: %w", err)
 	}
 
 	inputQueue := make(chan *Alert, len(alerts))

@@ -2,12 +2,13 @@ package shimesaba
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sort"
 	"time"
 )
 
-//Definition is SLO Definition
+// Definition is SLO Definition
 type Definition struct {
 	id              string
 	destination     *Destination
@@ -18,7 +19,7 @@ type Definition struct {
 	alertBasedSLIs []*AlertBasedSLI
 }
 
-//NewDefinition creates Definition from SLOConfig
+// NewDefinition creates Definition from SLOConfig
 func NewDefinition(cfg *SLOConfig) (*Definition, error) {
 	AlertBasedSLIs := make([]*AlertBasedSLI, 0, len(cfg.AlertBasedSLI))
 	for _, cfg := range cfg.AlertBasedSLI {
@@ -49,16 +50,20 @@ func (d *Definition) CreateReports(ctx context.Context, provider DataProvider, n
 	startAt := d.StartAt(now, backfill)
 	alerts, err := provider.FetchAlerts(ctx, startAt, now)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch alerts: %w", err)
 	}
 	log.Printf("[debug] get %d alerts", len(alerts))
 	valerts, err := provider.FetchVirtualAlerts(ctx, d.destination.ServiceName, d.id, startAt, now)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch virtual alerts: %w", err)
 	}
 	log.Printf("[debug] get %d virtual alerts", len(valerts))
 	alerts = append(alerts, valerts...)
-	return d.CreateReportsWithAlertsAndPeriod(ctx, alerts, d.StartAt(now, backfill), now)
+	reports, err := d.CreateReportsWithAlertsAndPeriod(ctx, alerts, startAt, now)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create reports: %w", err)
+	}
+	return reports, nil
 }
 
 func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alerts Alerts, startAt, endAt time.Time) ([]*Report, error) {
@@ -69,14 +74,14 @@ func (d *Definition) CreateReportsWithAlertsAndPeriod(ctx context.Context, alert
 	log.Printf("[debug] timeFrame = %s, calculateInterval = %s", d.rollingPeriod, d.calculate)
 	var Reliabilities Reliabilities
 	log.Printf("[debug] alert based SLI count = %d", len(d.alertBasedSLIs))
-	for _, o := range d.alertBasedSLIs {
+	for i, o := range d.alertBasedSLIs {
 		rc, err := o.EvaluateReliabilities(d.calculate, alerts, startAt, endAt)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to evaluate reliabilities for alert_based_sli[%d]: %w", i, err)
 		}
 		Reliabilities, err = Reliabilities.Merge(rc)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to merge reliabilities for alert_based_sli[%d]: %w", i, err)
 		}
 	}
 	for _, r := range Reliabilities {

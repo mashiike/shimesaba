@@ -14,7 +14,7 @@ import (
 	"github.com/handlename/ssmwrap"
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 var (
