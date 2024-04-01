@@ -250,6 +250,9 @@ func (c *AlertBasedSLIConfig) Restrict() error {
 	if c.MonitorNameSuffix != "" {
 		return nil
 	}
+	if c.MonitorType != "" {
+		return nil
+	}
 
 	return errors.New("either monitor_id, monitor_name, monitor_name_prefix, monitor_name_suffix or monitor_type is required")
 }

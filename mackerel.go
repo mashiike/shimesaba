@@ -26,7 +26,7 @@ type MackerelClient interface {
 	GetMonitor(monitorID string) (mackerel.Monitor, error)
 	FindMonitors() ([]mackerel.Monitor, error)
 
-	FindGraphAnnotations(service string, from int64, to int64) ([]mackerel.GraphAnnotation, error)
+	FindGraphAnnotations(service string, from int64, to int64) ([]*mackerel.GraphAnnotation, error)
 }
 
 // Repository handles reading and writing data
@@ -260,7 +260,12 @@ func (repo *Repository) convertAlerts(resp *mackerel.AlertsResp) ([]*Alert, erro
 			var err error
 			monitor, err = repo.getMonitor(alert.MonitorID, alert.Type)
 			if err != nil {
-				return nil, fmt.Errorf("get monitor for alert `%s`: %w", alert.ID, err)
+				if strings.Contains(err.Error(), "unknown monitor type:") {
+					log.Printf("[warn] alert[%s].MonitorID=%s, unknown monitor type: %s", alert.ID, alert.MonitorID, alert.Type)
+					monitor = NewMonitor(alert.MonitorID, alert.MonitorID, alert.Type)
+				} else {
+					return nil, fmt.Errorf("get monitor for alert `%s`: %w", alert.ID, err)
+				}
 			}
 		}
 		a := NewAlert(
