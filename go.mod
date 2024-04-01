@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Songmu/flextime v0.1.0
-	github.com/aws/aws-lambda-go v1.41.0
+	github.com/aws/aws-lambda-go v1.46.0
 	github.com/fatih/color v1.16.0
 	github.com/fujiwara/logutils v1.1.2
 	github.com/handlename/ssmwrap v1.2.1
