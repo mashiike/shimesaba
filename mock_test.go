@@ -112,7 +112,7 @@ func (m *mockMackerelClient) GetMonitor(monitorID string) (mackerel.Monitor, err
 	}
 }
 
-var graphAnnotations = []mackerel.GraphAnnotation{
+var graphAnnotations = []*mackerel.GraphAnnotation{
 	{
 		ID:          "xxxxxxxxxxx",
 		Title:       "hogehogehoge",
@@ -136,7 +136,7 @@ var graphAnnotations = []mackerel.GraphAnnotation{
 	},
 }
 
-func (m *mockMackerelClient) FindGraphAnnotations(service string, from int64, to int64) ([]mackerel.GraphAnnotation, error) {
+func (m *mockMackerelClient) FindGraphAnnotations(service string, from int64, to int64) ([]*mackerel.GraphAnnotation, error) {
 	require.Equal(m.t, "shimesaba", service)
 
 	return graphAnnotations, nil

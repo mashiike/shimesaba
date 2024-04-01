@@ -26,7 +26,7 @@ type MackerelClient interface {
 	GetMonitor(monitorID string) (mackerel.Monitor, error)
 	FindMonitors() ([]mackerel.Monitor, error)
 
-	FindGraphAnnotations(service string, from int64, to int64) ([]mackerel.GraphAnnotation, error)
+	FindGraphAnnotations(service string, from int64, to int64) ([]*mackerel.GraphAnnotation, error)
 }
 
 // Repository handles reading and writing data
