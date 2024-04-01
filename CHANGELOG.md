@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.4.2](https://github.com/mashiike/shimesaba/compare/v1.4.1...v1.4.2) - 2024-04-01
+- build(deps): bump actions/checkout from 3 to 4 by @dependabot in https://github.com/mashiike/shimesaba/pull/128
+- Ignore if it is an unknown monitor type error. by @mashiike in https://github.com/mashiike/shimesaba/pull/138
+- build(deps): bump github.com/urfave/cli/v2 from 2.25.7 to 2.27.1 by @dependabot in https://github.com/mashiike/shimesaba/pull/134
+- build(deps): bump actions/setup-go from 4 to 5 by @dependabot in https://github.com/mashiike/shimesaba/pull/129
+- build(deps): bump goreleaser/goreleaser-action from 1 to 5 by @dependabot in https://github.com/mashiike/shimesaba/pull/127
+- build(deps): bump github.com/fatih/color from 1.15.0 to 1.16.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/132
+- build(deps): bump github.com/shogo82148/go-retry from 1.1.1 to 1.2.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/133
+- build(deps): bump github.com/aws/aws-lambda-go from 1.41.0 to 1.46.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/131
+
 ## [v1.4.1](https://github.com/mashiike/shimesaba/compare/v1.4.0...v1.4.1) - 2024-02-02
 - build(deps): bump github.com/mackerelio/mackerel-client-go from 0.23.0 to 0.24.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/91
 - build(deps): bump github.com/urfave/cli/v2 from 2.23.7 to 2.25.1 by @dependabot in https://github.com/mashiike/shimesaba/pull/105
