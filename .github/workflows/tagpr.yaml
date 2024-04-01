@@ -10,14 +10,14 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: tagpr
         uses: Songmu/tagpr@v1
       - name: Adding summary
         run: echo '### ${{steps.tagpr.outputs.tag}}' >> $GITHUB_STEP_SUMMARY
         if: ${{ steps.tagpr.outputs.tag != '' }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         if: ${{ steps.tagpr.outputs.tag != '' }}
         with:
           ref: ${{ steps.tagpr.outputs.tag }}
