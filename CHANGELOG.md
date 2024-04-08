@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.4.3](https://github.com/mashiike/shimesaba/compare/v1.4.2...v1.4.3) - 2024-04-08
+- change config for dependabot by @mashiike in https://github.com/mashiike/shimesaba/pull/141
+- build(deps): bump github.com/stretchr/testify from 1.8.4 to 1.9.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/140
+- Add action-gocredits.  by @mashiike in https://github.com/mashiike/shimesaba/pull/145
+- build(deps): bump golang.org/x/sync from 0.6.0 to 0.7.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/143
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.30.0 to 0.31.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/144
+
 ## [v1.4.2](https://github.com/mashiike/shimesaba/compare/v1.4.1...v1.4.2) - 2024-04-01
 - build(deps): bump actions/checkout from 3 to 4 by @dependabot in https://github.com/mashiike/shimesaba/pull/128
 - Ignore if it is an unknown monitor type error. by @mashiike in https://github.com/mashiike/shimesaba/pull/138
