@@ -1,5 +1,8 @@
 # Changelog
 
+## [v1.4.4](https://github.com/mashiike/shimesaba/compare/v1.4.3...v1.4.4) - 2024-04-30
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.1 to 2.27.2 by @dependabot in https://github.com/mashiike/shimesaba/pull/147
+
 ## [v1.4.3](https://github.com/mashiike/shimesaba/compare/v1.4.2...v1.4.3) - 2024-04-08
 - change config for dependabot by @mashiike in https://github.com/mashiike/shimesaba/pull/141
 - build(deps): bump github.com/stretchr/testify from 1.8.4 to 1.9.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/140
