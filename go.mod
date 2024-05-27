@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.46.0
 	github.com/fatih/color v1.16.0
 	github.com/fujiwara/logutils v1.1.2
-	github.com/handlename/ssmwrap v1.2.1
+	github.com/handlename/ssmwrap v1.2.2
 	github.com/hashicorp/go-version v1.6.0
 	github.com/kayac/go-config v0.7.0
 	github.com/mackerelio/mackerel-client-go v0.31.0
