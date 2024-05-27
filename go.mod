@@ -8,7 +8,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/fujiwara/logutils v1.1.2
 	github.com/handlename/ssmwrap v1.2.1
-	github.com/hashicorp/go-version v1.6.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/kayac/go-config v0.7.0
 	github.com/mackerelio/mackerel-client-go v0.31.0
 	github.com/shogo82148/go-retry v1.2.0
