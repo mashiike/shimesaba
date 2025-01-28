@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.4.4](https://github.com/mashiike/shimesaba/compare/v1.4.3...v1.4.4) - 2025-01-28
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.1 to 2.27.2 by @dependabot in https://github.com/mashiike/shimesaba/pull/147
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.31.0 to 0.34.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/156
+- build(deps): bump goreleaser/goreleaser-action from 5 to 6 by @dependabot in https://github.com/mashiike/shimesaba/pull/154
+- build(deps): bump github.com/fatih/color from 1.16.0 to 1.17.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/149
+- build(deps): bump github.com/hashicorp/go-version from 1.6.0 to 1.7.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/151
+- update go 1.23 and handlename/ssmwrap/v2 by @mashiike in https://github.com/mashiike/shimesaba/pull/157
+- build(deps): bump github.com/aws/aws-lambda-go from 1.46.0 to 1.47.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/146
+
 ## [v1.4.3](https://github.com/mashiike/shimesaba/compare/v1.4.2...v1.4.3) - 2024-04-08
 - change config for dependabot by @mashiike in https://github.com/mashiike/shimesaba/pull/141
 - build(deps): bump github.com/stretchr/testify from 1.8.4 to 1.9.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/140
