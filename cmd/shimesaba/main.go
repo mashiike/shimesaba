@@ -8,10 +8,9 @@ import (
 	"os/signal"
 	"sort"
 	"strings"
-	"syscall"
 
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/handlename/ssmwrap"
+	"github.com/handlename/ssmwrap/v2"
 	"github.com/mashiike/shimesaba"
 	"github.com/mashiike/shimesaba/internal/logger"
 	cli "github.com/urfave/cli/v2"
@@ -27,21 +26,32 @@ var (
 )
 
 func main() {
-	ssmwrapPaths := os.Getenv("SSMWRAP_PATHS")
-	paths := strings.Split(ssmwrapPaths, ",")
-	if ssmwrapPaths != "" && len(paths) > 0 {
-		ssmwrapPathsErr = ssmwrap.Export(ssmwrap.ExportOptions{
-			Paths:   paths,
-			Retries: 3,
-		})
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	var ssmwrapExportRules []ssmwrap.ExportRule
+	if ssmwrapPaths := os.Getenv("SSMWRAP_PATHS"); ssmwrapPaths != "" {
+		for _, path := range strings.Split(ssmwrapPaths, ",") {
+			path = strings.TrimSuffix(path, "/")
+			ssmwrapExportRules = append(ssmwrapExportRules, ssmwrap.ExportRule{
+				Path: path + "/**/*",
+			})
+		}
 	}
-	ssmwrapNames := os.Getenv("SSMWRAP_NAMES")
-	names := strings.Split(ssmwrapNames, ",")
-	if ssmwrapPathsErr == nil && ssmwrapNames != "" && len(names) > 0 {
-		ssmwrapNamesErr = ssmwrap.Export(ssmwrap.ExportOptions{
-			Names:   names,
+	if ssmwarpNames := os.Getenv("SSMWRAP_NAMES"); ssmwarpNames != "" {
+		for _, name := range strings.Split(ssmwarpNames, ",") {
+			ssmwrapExportRules = append(ssmwrapExportRules, ssmwrap.ExportRule{
+				Path: name,
+			})
+		}
+	}
+	if len(ssmwrapExportRules) > 0 {
+		err := ssmwrap.Export(ctx, ssmwrapExportRules, ssmwrap.ExportOptions{
 			Retries: 3,
 		})
+		if err != nil {
+			logger.Setup(os.Stderr, "error")
+			log.Fatalf("[error] failed to export SSM parameters: %s", err)
+		}
 	}
 
 	cliApp := &cli.App{
@@ -132,8 +142,6 @@ func main() {
 			os.Args = append(os.Args, "run")
 		}
 	}
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
-	defer cancel()
 	if err := cliApp.RunContext(ctx, os.Args); err != nil {
 		log.Fatalf("[error] %s", err)
 	}
