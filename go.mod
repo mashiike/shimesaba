@@ -13,12 +13,12 @@ require (
 	github.com/mackerelio/mackerel-client-go v0.34.0
 	github.com/shogo82148/go-retry v1.2.0
 	github.com/stretchr/testify v1.9.0
-	github.com/urfave/cli/v2 v2.27.2
+	github.com/urfave/cli/v2 v2.27.5
 	golang.org/x/sync v0.7.0
 )
 
 require (
-	github.com/BurntSushi/toml v1.3.2 // indirect
+	github.com/BurntSushi/toml v1.4.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.30.1 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.27.23 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.23 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.1 // indirect
 	github.com/aws/smithy-go v1.20.3 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/lmittmann/tint v1.0.4 // indirect
@@ -42,7 +42,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.44.0 // indirect
-	github.com/xrash/smetrics v0.0.0-20240312152122-5f08fbb34913 // indirect
+	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
