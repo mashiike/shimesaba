@@ -5,7 +5,7 @@ go 1.23
 require (
 	github.com/Songmu/flextime v0.1.0
 	github.com/aws/aws-lambda-go v1.47.0
-	github.com/fatih/color v1.17.0
+	github.com/fatih/color v1.18.0
 	github.com/fujiwara/logutils v1.1.2
 	github.com/handlename/ssmwrap/v2 v2.2.0
 	github.com/hashicorp/go-version v1.7.0
@@ -43,7 +43,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.44.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
