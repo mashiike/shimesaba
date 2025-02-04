@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/kayac/go-config v0.7.0
 	github.com/mackerelio/mackerel-client-go v0.34.0
-	github.com/shogo82148/go-retry v1.2.0
+	github.com/shogo82148/go-retry v1.3.1
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.27.5
 	golang.org/x/sync v0.7.0
