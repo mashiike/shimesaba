@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.4.5](https://github.com/mashiike/shimesaba/compare/v1.4.4...v1.4.5) - 2025-03-11
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.2 to 2.27.5 by @dependabot in https://github.com/mashiike/shimesaba/pull/158
+- build(deps): bump github.com/shogo82148/go-retry from 1.2.0 to 1.3.1 by @dependabot in https://github.com/mashiike/shimesaba/pull/162
+- build(deps): bump github.com/stretchr/testify from 1.9.0 to 1.10.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/161
+- build(deps): bump golang.org/x/sync from 0.7.0 to 0.10.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/159
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.5 to 2.27.6 by @dependabot in https://github.com/mashiike/shimesaba/pull/167
+
 ## [v1.4.4](https://github.com/mashiike/shimesaba/compare/v1.4.3...v1.4.4) - 2025-01-28
 - build(deps): bump github.com/urfave/cli/v2 from 2.27.1 to 2.27.2 by @dependabot in https://github.com/mashiike/shimesaba/pull/147
 - build(deps): bump github.com/mackerelio/mackerel-client-go from 0.31.0 to 0.34.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/156
