@@ -1,6 +1,7 @@
 module github.com/mashiike/shimesaba
 
 go 1.23
+toolchain go1.24.1
 
 require (
 	github.com/Songmu/flextime v0.1.0
@@ -14,7 +15,7 @@ require (
 	github.com/shogo82148/go-retry v1.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
-	golang.org/x/sync v0.10.0
+	golang.org/x/sync v0.14.0
 )
 
 require (
