@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag }}
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.23
+          go-version: stable
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:

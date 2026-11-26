@@ -2,7 +2,7 @@ name: Test
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     types:
       - opened
@@ -14,7 +14,8 @@ jobs:
     strategy:
       matrix:
         go:
-          - 1.23
+          - oldstable
+          - stable
     name: Build
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +26,7 @@ jobs:
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build & Test
         run: |
