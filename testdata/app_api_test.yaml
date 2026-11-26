@@ -1,0 +1,21 @@
+required_version: ">=1.2.0"
+
+destination:
+  metrics:
+    uptime:
+      enabled: true
+    failure_time:
+      enabled: true
+
+slo:
+  # error budget = 10m * 0.2 = 2m.
+  # It must be at least 1m, otherwise the percentage metrics become NaN/Inf and cannot be posted as JSON.
+  - id: alerts
+    destination:
+      service_name:  shimesaba
+    rolling_period: 10m
+    calculate_interval: 1m
+    error_budget_size: 0.2
+    alert_based_sli:
+      - monitor_id: "dummyMonitorID"
+      - monitor_name_prefix: "Dummy"
