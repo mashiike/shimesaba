@@ -4,13 +4,13 @@ go 1.24.0
 
 require (
 	github.com/Songmu/flextime v0.1.0
-	github.com/aws/aws-lambda-go v1.47.0
+	github.com/aws/aws-lambda-go v1.50.0
 	github.com/fatih/color v1.17.0
 	github.com/fujiwara/logutils v1.1.2
 	github.com/handlename/ssmwrap/v2 v2.2.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/kayac/go-config v0.7.0
-	github.com/mackerelio/mackerel-client-go v0.34.0
+	github.com/mackerelio/mackerel-client-go v0.37.3
 	github.com/shogo82148/go-retry v1.3.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
