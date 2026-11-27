@@ -235,8 +235,11 @@ func (repo *Repository) fetchAlertsIncremental(ctx context.Context) error {
 
 	if len(converted) != 0 {
 		repo.alertCurrentAt = converted[len(converted)-1].OpenedAt
-		repo.alertNextID = resp.NextID
 	}
+	// Always advance to the next page. Even when this page has no alerts that
+	// can be converted (e.g. all of them lack MonitorID), keeping the old nextID
+	// would request the same page forever.
+	repo.alertNextID = resp.NextID
 	return nil
 }
 
@@ -370,7 +373,7 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 					if monitor.Critical != nil {
 						if value < *monitor.Critical {
 							isNoViolation[cursorAt] = false
-							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Warning)
+							log.Printf("[debug] monitor `%s`, SLO Violation, hostId=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, hostID, cursorAt, value, *monitor.Critical)
 							continue
 						}
 					}
@@ -430,7 +433,7 @@ func (repo *Repository) convertMonitor(monitor mackerel.Monitor) *Monitor {
 					if monitor.Critical != nil {
 						if value < *monitor.Critical {
 							isNoViolation[cursorAt] = false
-							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Warning)
+							log.Printf("[debug] monitor `%s`, SLO Violation, service=`%s`, time=`%s`,  value[%f] < critical[%f]", monitor.Name, monitor.Service, cursorAt, value, *monitor.Critical)
 							continue
 						}
 					}
