@@ -111,6 +111,45 @@ func TestSLOConfigErrorBudgetSize(t *testing.T) {
 			},
 			exceptedErr: true,
 		},
+		{
+			// 5m * 0.1 = 30s, truncated to 0m
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "5m",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1m",
+				ErrorBudgetSize:   0.1,
+			},
+			exceptedErr: true,
+		},
+		{
+			// 28d * 0.001% = 24.192s, truncated to 0m
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "28d",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1h",
+				ErrorBudgetSize:   "0.001%",
+			},
+			exceptedErr: true,
+		},
+		{
+			// 5m * 0.2 = 1m, the minimum
+			cfg: &shimesaba.SLOConfig{
+				ID:            "test",
+				RollingPeriod: "5m",
+				Destination: &shimesaba.DestinationConfig{
+					ServiceName: "shimesaba",
+				},
+				CalculateInterval: "1m",
+				ErrorBudgetSize:   "1m",
+			},
+			expected: 0.2,
+		},
 	}
 
 	for i, c := range cases {
