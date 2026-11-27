@@ -1,5 +1,22 @@
 # Changelog
 
+## [v1.4.5](https://github.com/mashiike/shimesaba/compare/v1.4.4...v1.4.5) - 2026-11-27
+
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.2 to 2.27.5 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/158
+- build(deps): bump github.com/shogo82148/go-retry from 1.2.0 to 1.3.1 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/162
+- build(deps): bump github.com/stretchr/testify from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/161
+- build(deps): bump golang.org/x/sync from 0.7.0 to 0.10.0 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/159
+- build(deps): bump github.com/urfave/cli/v2 from 2.27.5 to 2.27.6 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/167
+- ci: run tests on main and use supported Go versions by @mashiike in https://github.com/mashiike/shimesaba/pull/187
+- build(deps): bump github.com/aws/aws-lambda-go from 1.47.0 to 1.50.0 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/185
+- build(deps): bump github.com/mackerelio/mackerel-client-go from 0.34.0 to 0.37.3 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/183
+- build(deps): bump golang.org/x/sync from 0.10.0 to 0.17.0 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/182
+- build(deps): bump actions/checkout from 4 to 6 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/186
+- build(deps): bump actions/setup-go from 5 to 6 by @dependabot[bot] in https://github.com/mashiike/shimesaba/pull/180
+- build(deps): bump ssmwrap/v2 to 2.2.5 and fatih/color to 1.18.0 by @mashiike in https://github.com/mashiike/shimesaba/pull/188
+- Add tests for Mackerel API, reassessment and CLI helpers; fix two Repository bugs by @mashiike in https://github.com/mashiike/shimesaba/pull/189
+- Reject error budgets smaller than 1 minute by @mashiike in https://github.com/mashiike/shimesaba/pull/190
+
 ## [v1.4.4](https://github.com/mashiike/shimesaba/compare/v1.4.3...v1.4.4) - 2025-01-28
 - build(deps): bump github.com/urfave/cli/v2 from 2.27.1 to 2.27.2 by @dependabot in https://github.com/mashiike/shimesaba/pull/147
 - build(deps): bump github.com/mackerelio/mackerel-client-go from 0.31.0 to 0.34.0 by @dependabot in https://github.com/mashiike/shimesaba/pull/156
