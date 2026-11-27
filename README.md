@@ -101,6 +101,7 @@ calculate_interval: 1h      # - Settings related to the interval for calculating
 error_budget_size: 0.1%     # - This setting is related to the size of the error budget.
                             #   If % is used, it is a ratio to the size of the rolling window.
                             #   It is also possible to specify a time such as 1h or 40m.
+                            #   The error budget must be at least 1m (e.g. 0.1% of 28d is about 40m).
 
 # Describes the settings for each SLO. SLOs are treated as monitoring rules.
 # The definition of each SLO is determined by ORing the monitoring rules that match the conditions specified in `objectives`.

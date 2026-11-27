@@ -169,6 +169,15 @@ func (c *SLOConfig) Restrict() error {
 	if c.errorBudgetSizePercentage >= 1.0 || c.errorBudgetSizePercentage <= 0.0 {
 		return errors.New("error_budget must between 1.0 and 0.0")
 	}
+	// Reports truncate the error budget to minutes. A budget under 1m becomes 0m,
+	// which makes the error budget percentages NaN/Inf, and those values can not be posted to Mackerel.
+	if errorBudgetSize := time.Duration(c.errorBudgetSizePercentage * float64(c.rollingPeriod)).Truncate(time.Minute); errorBudgetSize < time.Minute {
+		return fmt.Errorf(
+			"error_budget is too small: %s of rolling_period %s is less than 1m, set error_budget_size or rolling_period so that the error budget is at least 1m",
+			strconv.FormatFloat(c.errorBudgetSizePercentage*100.0, 'f', -1, 64)+"%",
+			c.RollingPeriod,
+		)
+	}
 
 	for i, alertBasedSLI := range c.AlertBasedSLI {
 		if err := alertBasedSLI.Restrict(); err != nil {

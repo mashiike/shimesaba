@@ -26,7 +26,7 @@ slo:
   - id: availability
     rolling_period: 5m
     calculate_interval: 1m
-    error_budget_size: 0.1
+    error_budget_size: 0.25 # 5m * 0.25 = 1m15s, truncated to 1m (the minimum)
     alert_based_sli:
       - monitor_id: "dummyMonitorID"
       - monitor_name_prefix: "Dummy"

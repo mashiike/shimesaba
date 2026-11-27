@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"testing"
 	"time"
@@ -73,6 +74,9 @@ func TestAppWithMock(t *testing.T) {
 
 					actual := make(map[string]int)
 					for _, v := range client.posted {
+						value, ok := v.Value.(float64)
+						require.True(t, ok, "%s value must be float64", v.Name)
+						require.False(t, math.IsNaN(value) || math.IsInf(value, 0), "%s value must be finite, got %f", v.Name, value)
 						if _, ok := actual[v.Name]; !ok {
 							actual[v.Name] = 0
 						}
