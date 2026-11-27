@@ -28,22 +28,7 @@ var (
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
-	var ssmwrapExportRules []ssmwrap.ExportRule
-	if ssmwrapPaths := os.Getenv("SSMWRAP_PATHS"); ssmwrapPaths != "" {
-		for _, path := range strings.Split(ssmwrapPaths, ",") {
-			path = strings.TrimSuffix(path, "/")
-			ssmwrapExportRules = append(ssmwrapExportRules, ssmwrap.ExportRule{
-				Path: path + "/**/*",
-			})
-		}
-	}
-	if ssmwarpNames := os.Getenv("SSMWRAP_NAMES"); ssmwarpNames != "" {
-		for _, name := range strings.Split(ssmwarpNames, ",") {
-			ssmwrapExportRules = append(ssmwrapExportRules, ssmwrap.ExportRule{
-				Path: name,
-			})
-		}
-	}
+	ssmwrapExportRules := buildSSMWrapExportRules(os.Getenv("SSMWRAP_PATHS"), os.Getenv("SSMWRAP_NAMES"))
 	if len(ssmwrapExportRules) > 0 {
 		err := ssmwrap.Export(ctx, ssmwrapExportRules, ssmwrap.ExportOptions{
 			Retries: 3,
@@ -145,6 +130,28 @@ func main() {
 	if err := cliApp.RunContext(ctx, os.Args); err != nil {
 		log.Fatalf("[error] %s", err)
 	}
+}
+
+// buildSSMWrapExportRules builds ssmwrap export rules from the comma-separated
+// values of SSMWRAP_PATHS and SSMWRAP_NAMES.
+func buildSSMWrapExportRules(ssmwrapPaths, ssmwrapNames string) []ssmwrap.ExportRule {
+	var rules []ssmwrap.ExportRule
+	if ssmwrapPaths != "" {
+		for _, path := range strings.Split(ssmwrapPaths, ",") {
+			path = strings.TrimSuffix(path, "/")
+			rules = append(rules, ssmwrap.ExportRule{
+				Path: path + "/**/*",
+			})
+		}
+	}
+	if ssmwrapNames != "" {
+		for _, name := range strings.Split(ssmwrapNames, ",") {
+			rules = append(rules, ssmwrap.ExportRule{
+				Path: name,
+			})
+		}
+	}
+	return rules
 }
 
 func isLambda() bool {
